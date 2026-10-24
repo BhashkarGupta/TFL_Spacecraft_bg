@@ -1,0 +1,400 @@
+/* ===================================================
+   SPACECRAFT FX — Background & Cursor Package
+   spacecraft-fx.css (Supports Dark & Light Themes)
+=================================================== */
+
+/* --- THEME TOKENS (DARK & LIGHT) ------------------ */
+:root,
+[data-theme="dark"] {
+  --fx-bg: #06080d;
+  --fx-text: #e6edf3;
+  --fx-text-muted: #8b949e;
+  --fx-accent: #ff9933;
+  --fx-accent-rgb: 255, 153, 51;
+  --fx-vignette: radial-gradient(ellipse 90% 85% at 50% 50%, rgba(6, 8, 13, 0.22) 35%, rgba(6, 8, 13, 0.76) 78%, #06080d 100%);
+
+  /* Liquid Glass Slab Tokens (Dark) */
+  --fx-glass-bg: rgba(13, 17, 28, 0.4);
+  --fx-glass-bg-hover: rgba(18, 25, 42, 0.52);
+  --fx-glass-border: rgba(255, 255, 255, 0.12);
+  --fx-glass-border-hover: rgba(255, 153, 51, 0.55);
+  --fx-glass-blur: blur(20px) saturate(190%);
+  --fx-glass-shadow: 0 16px 36px -8px rgba(0, 0, 0, 0.65), 0 4px 12px 0 rgba(0, 0, 0, 0.3);
+
+  /* Button Tokens (Dark) */
+  --fx-btn-primary-bg: rgba(255, 153, 51, 0.2);
+  --fx-btn-primary-border: rgba(255, 153, 51, 0.55);
+  --fx-btn-primary-text: #ff9933;
+  --fx-btn-primary-hover-bg: rgba(255, 153, 51, 0.32);
+
+  --fx-btn-secondary-bg: rgba(255, 255, 255, 0.05);
+  --fx-btn-secondary-border: rgba(255, 255, 255, 0.12);
+  --fx-btn-secondary-text: #e6edf3;
+  --fx-btn-secondary-hover-bg: rgba(255, 255, 255, 0.1);
+}
+
+[data-theme="light"],
+.light-theme {
+  --fx-bg: #f1f5f9;
+  --fx-text: #0f172a;
+  --fx-text-muted: #475569;
+  --fx-accent: #ea580c;
+  --fx-accent-rgb: 234, 88, 12;
+  --fx-vignette: radial-gradient(ellipse 90% 85% at 50% 50%, rgba(241, 245, 249, 0.25) 35%, rgba(226, 232, 240, 0.75) 78%, #e2e8f0 100%);
+
+  /* Liquid Glass Slab Tokens (Light) - Uniform 4-Sided Border & Clean Refraction */
+  --fx-glass-bg: rgba(255, 255, 255, 0.38);
+  --fx-glass-bg-hover: rgba(255, 255, 255, 0.52);
+  --fx-glass-border: rgba(15, 23, 42, 0.1);
+  --fx-glass-border-hover: rgba(234, 88, 12, 0.55);
+  --fx-glass-blur: blur(20px) saturate(200%);
+  --fx-glass-shadow: 0 16px 36px -8px rgba(15, 23, 42, 0.08), 0 4px 12px 0 rgba(15, 23, 42, 0.03);
+
+  /* Button Tokens (Light) */
+  --fx-btn-primary-bg: rgba(234, 88, 12, 0.12);
+  --fx-btn-primary-border: rgba(234, 88, 12, 0.45);
+  --fx-btn-primary-text: #c2410c;
+  --fx-btn-primary-hover-bg: rgba(234, 88, 12, 0.22);
+
+  --fx-btn-secondary-bg: rgba(255, 255, 255, 0.45);
+  --fx-btn-secondary-border: rgba(15, 23, 42, 0.12);
+  --fx-btn-secondary-text: #0f172a;
+  --fx-btn-secondary-hover-bg: rgba(255, 255, 255, 0.65);
+}
+
+/* 1. FUTURISTIC ELECTRIC NETWORK BACKGROUND */
+.cyber-network-bg {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  pointer-events: none;
+  z-index: 0;
+  overflow: hidden;
+  background-color: var(--fx-bg);
+  transition: background-color 0.3s ease;
+}
+
+/* Minimal Cosmic Nebula Clouds */
+.cyber-nebula-clouds {
+  position: absolute;
+  inset: -15%;
+  width: 130%;
+  height: 130%;
+  pointer-events: none;
+  overflow: hidden;
+  will-change: transform;
+}
+
+.nebula-cloud {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(80px);
+  opacity: 0.75;
+  mix-blend-mode: screen;
+  will-change: transform, opacity;
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+}
+
+[data-theme="light"] .nebula-cloud,
+.light-theme .nebula-cloud {
+  mix-blend-mode: multiply;
+  opacity: 0.85;
+}
+
+.cloud-cyan {
+  top: 10%;
+  left: 8%;
+  width: 52vw;
+  height: 52vw;
+  max-width: 720px;
+  max-height: 720px;
+  background: radial-gradient(circle, rgba(56, 189, 248, 0.08) 0%, rgba(14, 165, 233, 0.03) 45%, transparent 70%);
+  animation: nebulaFloat1 36s ease-in-out infinite alternate;
+}
+
+[data-theme="light"] .cloud-cyan,
+.light-theme .cloud-cyan {
+  background: radial-gradient(circle, rgba(14, 165, 233, 0.14) 0%, rgba(56, 189, 248, 0.05) 45%, transparent 70%);
+}
+
+.cloud-violet {
+  bottom: 8%;
+  right: 10%;
+  width: 58vw;
+  height: 58vw;
+  max-width: 780px;
+  max-height: 780px;
+  background: radial-gradient(circle, rgba(168, 85, 247, 0.065) 0%, rgba(126, 34, 206, 0.025) 50%, transparent 70%);
+  animation: nebulaFloat2 44s ease-in-out infinite alternate;
+}
+
+[data-theme="light"] .cloud-violet,
+.light-theme .cloud-violet {
+  background: radial-gradient(circle, rgba(147, 51, 234, 0.12) 0%, rgba(168, 85, 247, 0.04) 50%, transparent 70%);
+}
+
+.cloud-amber {
+  top: 42%;
+  left: 48%;
+  width: 44vw;
+  height: 44vw;
+  max-width: 580px;
+  max-height: 580px;
+  background: radial-gradient(circle, rgba(255, 153, 51, 0.05) 0%, rgba(255, 120, 0, 0.018) 45%, transparent 68%);
+  animation: nebulaFloat3 32s ease-in-out infinite alternate;
+}
+
+[data-theme="light"] .cloud-amber,
+.light-theme .cloud-amber {
+  background: radial-gradient(circle, rgba(249, 115, 22, 0.11) 0%, rgba(251, 146, 60, 0.03) 45%, transparent 68%);
+}
+
+.cloud-drift {
+  bottom: 22%;
+  left: 6%;
+  width: 48vw;
+  height: 48vw;
+  max-width: 640px;
+  max-height: 640px;
+  background: radial-gradient(circle, rgba(14, 165, 233, 0.045) 0%, rgba(99, 102, 241, 0.02) 50%, transparent 70%);
+  animation: nebulaFloat4 40s ease-in-out infinite alternate;
+}
+
+[data-theme="light"] .cloud-drift,
+.light-theme .cloud-drift {
+  background: radial-gradient(circle, rgba(99, 102, 241, 0.11) 0%, rgba(129, 140, 248, 0.03) 50%, transparent 70%);
+}
+
+@keyframes nebulaFloat1 {
+  0% { transform: translate(0, 0) scale(1) rotate(0deg); }
+  50% { transform: translate(4vw, 3vh) scale(1.08) rotate(12deg); }
+  100% { transform: translate(-3vw, -2vh) scale(0.95) rotate(-8deg); }
+}
+
+@keyframes nebulaFloat2 {
+  0% { transform: translate(0, 0) scale(1) rotate(0deg); }
+  50% { transform: translate(-5vw, -3vh) scale(1.1) rotate(-10deg); }
+  100% { transform: translate(3vw, 4vh) scale(0.92) rotate(12deg); }
+}
+
+@keyframes nebulaFloat3 {
+  0% { transform: translate(0, 0) scale(1); }
+  50% { transform: translate(-3vw, 4vh) scale(1.12); }
+  100% { transform: translate(4vw, -2vh) scale(0.9); }
+}
+
+@keyframes nebulaFloat4 {
+  0% { transform: translate(0, 0) scale(0.95); }
+  50% { transform: translate(3vw, -4vh) scale(1.08); }
+  100% { transform: translate(-4vw, 2vh) scale(1.0); }
+}
+
+#cyber-network-canvas {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.cyber-network-vignette {
+  position: absolute;
+  inset: 0;
+  background: var(--fx-vignette);
+  pointer-events: none;
+  transition: background 0.3s ease;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cyber-network-bg {
+    display: none;
+  }
+}
+
+@media (hover: none) {
+  .cyber-network-bg {
+    opacity: 0.6;
+  }
+}
+
+/* 2. ION EXHAUST TRAIL CANVAS */
+.spacecraft-trail-canvas {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  pointer-events: none;
+  z-index: 99999;
+}
+
+/* 3. MINIATURE SPACECRAFT CURSOR */
+.spacecraft-cursor {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 24px;
+  height: 34px;
+  pointer-events: none;
+  z-index: 100000;
+  opacity: 0;
+  will-change: transform, opacity;
+  transition: opacity 0.22s ease-out;
+  display: none;
+}
+
+.spacecraft-cursor.is-active {
+  opacity: 1;
+}
+
+.spacecraft-svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  transform-origin: 12px 14px;
+  will-change: transform;
+  overflow: visible;
+}
+
+/* Spacecraft Light Theme Adaptations (Frost Titanium Hull & Defined Beacon Tip) */
+[data-theme="light"] .sc-hull,
+.light-theme .sc-hull {
+  stroke: #0284c7;
+  stroke-width: 1px;
+  filter: drop-shadow(0 2px 4px rgba(15, 23, 42, 0.25));
+}
+
+[data-theme="light"] .sc-canopy,
+.light-theme .sc-canopy {
+  fill: #0284c7;
+}
+
+/* Light theme beacon tip: High-visibility targeting beacon (not white) */
+[data-theme="light"] .sc-beacon,
+.light-theme .sc-beacon {
+  fill: #ea580c !important;
+  filter: drop-shadow(0 0 3px #ea580c) !important;
+}
+
+[data-theme="light"] .spacecraft-svg line,
+.light-theme .spacecraft-svg line {
+  stroke: rgba(2, 132, 199, 0.55);
+}
+
+/* Hover targeting feedback */
+.spacecraft-cursor.is-targeting .sc-hull {
+  stroke: var(--fx-accent);
+  filter: drop-shadow(0 0 5px rgba(var(--fx-accent-rgb), 0.7));
+}
+
+.spacecraft-cursor.is-targeting .sc-canopy {
+  fill: var(--fx-accent);
+}
+
+/* Engine Flame Flicker Animation */
+.sc-flame {
+  transform-origin: 12px 21.5px;
+  animation: scFlameFlicker 0.12s ease-in-out infinite alternate;
+}
+
+@keyframes scFlameFlicker {
+  0% { opacity: 0.82; transform: scaleY(0.92); }
+  100% { opacity: 1; transform: scaleY(1.12); }
+}
+
+/* Hide default cursor on desktop pointer devices */
+@media (pointer: fine) {
+  body, a, button, input, textarea, select, label, [role="button"], [tabindex]:not([tabindex="-1"]) {
+    cursor: none !important;
+  }
+  .spacecraft-cursor {
+    display: block;
+  }
+}
+
+/* Fallback: hide custom cursor and trail on touch / mobile devices */
+@media (pointer: coarse), (hover: none) {
+  .spacecraft-cursor,
+  .spacecraft-trail-canvas {
+    display: none !important;
+  }
+}
+
+/* ===================================================
+   REUSABLE LIQUID GLASS CARD & BUTTON UTILITIES
+=================================================== */
+
+/* Liquid Glass Cards */
+.fx-glass-card {
+  position: relative;
+  background: var(--fx-glass-bg);
+  border: 1px solid var(--fx-glass-border);
+  backdrop-filter: var(--fx-glass-blur);
+  -webkit-backdrop-filter: var(--fx-glass-blur);
+  box-shadow: var(--fx-glass-shadow);
+  border-radius: 12px;
+  color: var(--fx-text);
+  transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1),
+              border-color 0.25s cubic-bezier(0.4, 0, 0.2, 1),
+              box-shadow 0.25s cubic-bezier(0.4, 0, 0.2, 1),
+              background 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.fx-glass-card:hover {
+  background: var(--fx-glass-bg-hover);
+  border-color: var(--fx-glass-border-hover);
+  transform: translateY(-4px);
+  box-shadow: var(--fx-glass-shadow), 0 0 24px -4px rgba(var(--fx-accent-rgb), 0.2);
+}
+
+/* Liquid Glass Buttons */
+.fx-glass-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-family: inherit;
+  font-size: 14.5px;
+  font-weight: 600;
+  padding: 12px 24px;
+  border-radius: 8px;
+  backdrop-filter: var(--fx-glass-blur);
+  -webkit-backdrop-filter: var(--fx-glass-blur);
+  transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1),
+              box-shadow 0.2s cubic-bezier(0.4, 0, 0.2, 1),
+              background 0.2s cubic-bezier(0.4, 0, 0.2, 1),
+              border-color 0.2s cubic-bezier(0.4, 0, 0.2, 1),
+              color 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.fx-glass-btn-primary {
+  background: var(--fx-btn-primary-bg);
+  border: 1px solid var(--fx-btn-primary-border);
+  color: var(--fx-btn-primary-text);
+  box-shadow: 0 4px 14px -3px rgba(var(--fx-accent-rgb), 0.35);
+}
+
+.fx-glass-btn-primary:hover {
+  background: var(--fx-btn-primary-hover-bg);
+  border-color: var(--fx-accent);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px -4px rgba(var(--fx-accent-rgb), 0.45);
+}
+
+.fx-glass-btn-secondary {
+  background: var(--fx-btn-secondary-bg);
+  border: 1px solid var(--fx-btn-secondary-border);
+  color: var(--fx-btn-secondary-text);
+  box-shadow: 0 4px 12px -2px rgba(0, 0, 0, 0.08);
+}
+
+.fx-glass-btn-secondary:hover {
+  background: var(--fx-btn-secondary-hover-bg);
+  border-color: var(--fx-glass-border-hover);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px -3px rgba(0, 0, 0, 0.15);
+}
