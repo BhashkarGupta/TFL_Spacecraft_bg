@@ -224,6 +224,15 @@
     </div>
 
     <div class="demo-nav-actions">
+      <!-- Instant Auto-Cruise Test Button -->
+      <button id="cruise-test-btn" class="fx-glass-btn fx-glass-btn-secondary nav-btn" title="Instantly trigger Idle Auto-Cruise without waiting 15 seconds">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="10"></circle>
+          <polygon points="10 8 16 12 10 16 10 8"></polygon>
+        </svg>
+        <span>Cruise Now</span>
+      </button>
+
       <!-- Mode activation toggle -->
       <button id="lowperf-toggle-btn" class="fx-glass-btn fx-glass-btn-secondary nav-btn" title="Toggle Low-Performance Mode (< 30 FPS mode)">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -291,7 +300,14 @@
 
       <div class="fx-glass-card card">
         <div class="card-inner">
-          <h3>6. Adaptive Performance Engine</h3>
+          <h3>6. Idle Autopilot Cruise</h3>
+          <p>If user interaction ceases for 15 seconds (customizable), the spacecraft automatically launches into a gentle patrol cruise across the page, waking upon cursor input.</p>
+        </div>
+      </div>
+
+      <div class="fx-glass-card card">
+        <div class="card-inner">
+          <h3>7. Adaptive Performance Engine</h3>
           <p>Built-in rolling FPS monitor automatically switches to lightweight zero-blur translucent styling if sustained frame rates drop below 30 FPS or when operating on mobile devices.</p>
         </div>
       </div>
@@ -365,6 +381,16 @@
           lowperfBtn.style.color = 'var(--fx-accent)';
         } else {
           location.reload();
+        }
+      });
+    }
+
+    // Immediate Cruise Test button
+    var cruiseBtn = document.getElementById('cruise-test-btn');
+    if (cruiseBtn) {
+      cruiseBtn.addEventListener('click', function() {
+        if (window.SpacecraftFX && window.SpacecraftFX.triggerAutoCruise) {
+          window.SpacecraftFX.triggerAutoCruise();
         }
       });
     }

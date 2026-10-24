@@ -10,6 +10,7 @@ A lightweight, zero-dependency visual effect engine featuring an interactive ele
 - **Tractor Beam and Kinetic Impulse**: Nearby nodes are drawn towards the spacecraft at low speeds and slingshotted away during rapid movement or clicks.
 - **Spacecraft Flight Cursor**: 1:1 hardware mouse tracking with 360-degree directional banking, dual flame exhausts, and glowing ion trails.
 - **Scroll Acceleration**: Dynamic vertical dive and climb offset coupled to mouse wheel or page scrolling.
+- **Idle Autopilot Cruise**: If no user interaction occurs for 15 seconds (customizable), the spacecraft automatically embarks on a smooth celestial cruise across the page, waking upon mouse or keyboard interaction.
 - **Adaptive Performance Mode**: Automatic FPS monitor that switches to zero-blur, lightweight translucent rendering if sustained frame rate drops below 30 FPS.
 - **Light and Dark Theme Support**: Adapts automatically via `data-theme="light"` or `data-theme="dark"`.
 - **Responsive and Accessible**: Automatically switches to native cursors and disables heavy GPU filters on mobile and touch devices, and respects `prefers-reduced-motion`.
@@ -69,9 +70,16 @@ console.log(SpacecraftFX.isLowPerf());
 
 ## Configuration (Optional)
 
+You can customize node density, trail buffer, and idle cruise timing during initialization or via the runtime API:
+
 ```javascript
 window.SpacecraftFX.init({
   maxNodes: 32,          // Max plasma nodes (default: 32)
-  maxTrailParticles: 28  // Thruster exhaust trail length (default: 28)
+  maxTrailParticles: 28, // Thruster exhaust trail length (default: 28)
+  idleTimeoutSec: 15,    // Inactivity delay before auto-cruise begins in seconds (default: 15)
+  cruiseSpeed: 0.95      // Autopilot cruise speed (default: 0.95)
 });
+
+// Or adjust idle timeout dynamically at runtime (in seconds):
+SpacecraftFX.setIdleTimeout(10);
 ```

@@ -204,6 +204,59 @@
     var cursorRadius = 140;
     var cursorRadiusSq = cursorRadius * cursorRadius;
 
+    // Idle Auto-Cruise Settings (Configurable, default: 15 seconds)
+    var idleTimeoutMs = typeof options.idleTimeoutSec === 'number'
+      ? Math.max(1, options.idleTimeoutSec) * 1000
+      : (typeof options.idleTimeoutMs === 'number' ? options.idleTimeoutMs : 15000);
+    var autoCruiseEnabled = options.autoCruise !== false;
+    var lastInteractionTime = Date.now();
+    var isAutoCruising = false;
+    var cruiseSpeed = typeof options.cruiseSpeed === 'number' ? options.cruiseSpeed : 0.95;
+    var cruiseWaypoint = { x: 0, y: 0 };
+    var cruiseHeading = 0;
+    var cruiseCooldownTimer = 0;
+    var currentCruiseEdge = -1; // 0: Top, 1: Right, 2: Bottom, 3: Left
+
+    function pickNewCruiseEdgeTarget() {
+      // 70% chance opposite edge, 30% chance adjacent edge across screen
+      var nextEdge;
+      if (currentCruiseEdge === -1) {
+        nextEdge = Math.floor(Math.random() * 4);
+      } else {
+        var opposite = (currentCruiseEdge + 2) % 4;
+        var adj1 = (currentCruiseEdge + 1) % 4;
+        var adj2 = (currentCruiseEdge + 3) % 4;
+        var r = Math.random();
+        if (r < 0.70) {
+          nextEdge = opposite;
+        } else if (r < 0.85) {
+          nextEdge = adj1;
+        } else {
+          nextEdge = adj2;
+        }
+      }
+      currentCruiseEdge = nextEdge;
+
+      var edgePad = 22; // distance from physical screen edge
+      var cornerMargin = 60; // keep away from sharp corners
+
+      if (nextEdge === 0) { // Top edge
+        cruiseWaypoint.x = cornerMargin + Math.random() * Math.max(80, width - cornerMargin * 2);
+        cruiseWaypoint.y = edgePad;
+      } else if (nextEdge === 1) { // Right edge
+        cruiseWaypoint.x = Math.max(100, width - edgePad);
+        cruiseWaypoint.y = cornerMargin + Math.random() * Math.max(80, height - cornerMargin * 2);
+      } else if (nextEdge === 2) { // Bottom edge
+        cruiseWaypoint.x = cornerMargin + Math.random() * Math.max(80, width - cornerMargin * 2);
+        cruiseWaypoint.y = Math.max(100, height - edgePad);
+      } else { // Left edge
+        cruiseWaypoint.x = edgePad;
+        cruiseWaypoint.y = cornerMargin + Math.random() * Math.max(80, height - cornerMargin * 2);
+      }
+
+      cruiseCooldownTimer = 0;
+    }
+
     var mouse = {
       x: -9999,
       y: -9999,
@@ -273,10 +326,8 @@
       shockwaves = [];
     }
 
-    // Automatically trigger low-performance mode on mobile devices or if pre-flagged
-    var isMobileInit = (typeof navigator !== 'undefined' && /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) ||
-                       (typeof window !== 'undefined' && window.innerWidth <= 768) ||
-                       (typeof navigator !== 'undefined' && navigator.maxTouchPoints > 1 && window.innerWidth <= 1024) ||
+    // Only enable low-performance mode if explicitly requested by class or if on actual small-screen mobile device without fine pointer
+    var isMobileInit = (typeof navigator !== 'undefined' && /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) && window.matchMedia('(hover: none) and (pointer: coarse)').matches) ||
                        (typeof document !== 'undefined' && document.documentElement && (document.documentElement.classList.contains('low-perf') || document.documentElement.classList.contains('no-gpu')));
 
     if (isMobileInit) {
@@ -987,7 +1038,7 @@
         if (prevTimestamp > 0) {
           var delta = currentTime - prevTimestamp;
           totalFramesRendered++;
-          if (totalFramesRendered > WARMUP_FRAMES) {
+          if (totalFramesRendered > WARMUP_FRAMES && !document.hidden && delta < 200) {
             frameDeltas.push(delta);
             if (frameDeltas.length >= FPS_CHECK_WINDOW) {
               var sum = 0;
@@ -996,8 +1047,8 @@
               }
               var avgDelta = sum / frameDeltas.length;
               var avgFps = 1000 / avgDelta;
-              if (avgFps < 30) {
-                enableLowPerfMode('fps_below_30 (' + avgFps.toFixed(1) + ' fps)');
+              if (avgFps < 18) {
+                enableLowPerfMode('fps_below_18 (' + avgFps.toFixed(1) + ' fps)');
               } else {
                 frameDeltas.shift();
               }
@@ -1035,9 +1086,100 @@
         }
       }
 
-      if (mouse.isHovering) {
-        mouse.x += (mouse.targetX - mouse.x) * 0.18;
-        mouse.y += (mouse.targetY - mouse.y) * 0.18;
+      var nowTime = Date.now();
+      var isIdle = autoCruiseEnabled && !isLowPerf && (nowTime - lastInteractionTime >= idleTimeoutMs);
+
+      if (isIdle) {
+        if (!isAutoCruising) {
+          isAutoCruising = true;
+          // Place inside screen if out of bounds
+          if (craft.x < 30 || craft.y < 30 || craft.x > width - 30 || craft.y > height - 30) {
+            craft.x = width * 0.5;
+            craft.y = height * 0.5;
+            craft.prevX = craft.x;
+            craft.prevY = craft.y;
+          }
+          // Align initial heading with craft's current orientation
+          cruiseHeading = (typeof craft.angle === 'number') ? (craft.angle - Math.PI / 2) : 0;
+          mouse.targetX = craft.x;
+          mouse.targetY = craft.y;
+          mouse.x = craft.x;
+          mouse.y = craft.y;
+          mouse.isHovering = true;
+          if (craftEl) {
+            craft.isActive = true;
+            craftEl.classList.add('is-active');
+            craftEl.style.display = 'block';
+          }
+          // Target an edge across the screen
+          pickNewCruiseEdgeTarget();
+        }
+
+        // Steer heading towards the target edge waypoint
+        var targetAngle = Math.atan2(cruiseWaypoint.y - craft.y, cruiseWaypoint.x - craft.x);
+        var angleDiff = targetAngle - cruiseHeading;
+        while (angleDiff < -Math.PI) angleDiff += Math.PI * 2;
+        while (angleDiff > Math.PI) angleDiff -= Math.PI * 2;
+
+        // Smooth banking turn rate (gentle 0.04 rad/frame)
+        var maxTurnRate = 0.04;
+        if (Math.abs(angleDiff) <= maxTurnRate) {
+          cruiseHeading = targetAngle;
+        } else {
+          cruiseHeading += Math.sign(angleDiff) * maxTurnRate;
+        }
+
+        // Move craft forward along heading at relaxed, majestic cruise speed
+        var moveSpeed = Math.max(0.8, cruiseSpeed);
+        craft.x += Math.cos(cruiseHeading) * moveSpeed;
+        craft.y += Math.sin(cruiseHeading) * moveSpeed;
+
+        // Boundary margins: allow ship to go all the way to 18px from physical edge
+        var minMargin = 18;
+        var maxMarginX = width - 18;
+        var maxMarginY = height - 18;
+
+        if (craft.x < minMargin) {
+          craft.x = minMargin;
+          if (Math.cos(cruiseHeading) < 0) cruiseHeading = Math.PI - cruiseHeading;
+        } else if (craft.x > maxMarginX) {
+          craft.x = maxMarginX;
+          if (Math.cos(cruiseHeading) > 0) cruiseHeading = Math.PI - cruiseHeading;
+        }
+
+        if (craft.y < minMargin) {
+          craft.y = minMargin;
+          if (Math.sin(cruiseHeading) < 0) cruiseHeading = -cruiseHeading;
+        } else if (craft.y > maxMarginY) {
+          craft.y = maxMarginY;
+          if (Math.sin(cruiseHeading) > 0) cruiseHeading = -cruiseHeading;
+        }
+
+        // Detect arrival at the edge: within 36px of target OR right up against any edge boundary
+        var distToTarget = Math.hypot(cruiseWaypoint.x - craft.x, cruiseWaypoint.y - craft.y);
+        var reachedEdge = (craft.x <= minMargin + 8) || (craft.x >= maxMarginX - 8) ||
+                          (craft.y <= minMargin + 8) || (craft.y >= maxMarginY - 8);
+
+        cruiseCooldownTimer++;
+        if ((distToTarget < 36 || reachedEdge) && cruiseCooldownTimer > 75) {
+          pickNewCruiseEdgeTarget();
+        }
+
+        // Directional banking and speed for ion thrusters
+        craft.targetAngle = cruiseHeading + Math.PI / 2;
+        craft.speed = 1.15; // keeps thrusters and ion trails smoothly active
+
+        mouse.x = craft.x;
+        mouse.y = craft.y;
+        mouse.targetX = craft.x;
+        mouse.targetY = craft.y;
+      } else if (isAutoCruising) {
+        isAutoCruising = false;
+      }
+
+      if (mouse.isHovering && !isAutoCruising) {
+        mouse.x += (mouse.targetX - mouse.x) * 0.22;
+        mouse.y += (mouse.targetY - mouse.y) * 0.22;
       }
 
       // In dark mode: additive blending for glowing sci-fi effect
@@ -1159,21 +1301,35 @@
     }
 
     // --- INTERACTION LISTENERS ---
+    function registerUserActivity() {
+      lastInteractionTime = Date.now();
+      if (isAutoCruising) {
+        isAutoCruising = false;
+      }
+    }
+
     function handlePointerMove(clientX, clientY) {
       if (isLowPerf) return;
+
+      var wasCruising = isAutoCruising;
+      registerUserActivity();
+
       mouse.targetX = clientX;
       mouse.targetY = clientY;
-      if (!mouse.isHovering) {
-        mouse.isHovering = true;
-        mouse.x = clientX;
-        mouse.y = clientY;
-        if (!rafId) rafId = requestAnimationFrame(render);
-      }
+      mouse.isHovering = true;
+
+      if (!rafId) rafId = requestAnimationFrame(render);
 
       if (craftEl) {
         if (!craft.isActive) {
           craft.isActive = true;
           craftEl.classList.add('is-active');
+          craft.prevX = clientX;
+          craft.prevY = clientY;
+        }
+
+        if (wasCruising) {
+          // Immediately anchor craft position to cursor coordinates
           craft.prevX = clientX;
           craft.prevY = clientY;
         }
@@ -1258,32 +1414,42 @@
       }
     }, { passive: true });
 
+    window.addEventListener('keydown', function() {
+      registerUserActivity();
+    }, { passive: true });
+
     window.addEventListener('mousedown', function(e) {
+      registerUserActivity();
       executeClickBurst(e.clientX, e.clientY);
     }, { passive: true });
 
     document.addEventListener('mouseleave', function() {
-      mouse.isHovering = false;
-      if (craftEl) {
-        craft.isActive = false;
-        craftEl.classList.remove('is-active', 'is-targeting', 'is-clicking');
+      if (!isAutoCruising) {
+        mouse.isHovering = false;
+        if (craftEl) {
+          craft.isActive = false;
+          craftEl.classList.remove('is-active', 'is-targeting', 'is-clicking');
+        }
+        clearCraftTrail();
       }
-      clearCraftTrail();
     });
 
     window.addEventListener('blur', function() {
-      mouse.isHovering = false;
-      if (craftEl) {
-        craft.isActive = false;
-        craftEl.classList.remove('is-active', 'is-targeting', 'is-clicking');
+      if (!isAutoCruising) {
+        mouse.isHovering = false;
+        if (craftEl) {
+          craft.isActive = false;
+          craftEl.classList.remove('is-active', 'is-targeting', 'is-clicking');
+        }
+        clearCraftTrail();
       }
-      clearCraftTrail();
     });
 
     // --- SCROLL DYNAMICS ---
     var lastScrollPos = window.scrollY || window.pageYOffset || 0;
 
     function triggerScrollMovement(deltaY) {
+      registerUserActivity();
       if (!craftEl || !craft.isActive) return;
       var absDelta = Math.abs(deltaY);
       if (absDelta < 1) return;
@@ -1317,6 +1483,7 @@
         if (rafId) { cancelAnimationFrame(rafId); rafId = null; }
       } else {
         isVisible = true;
+        registerUserActivity();
         if (!rafId) rafId = requestAnimationFrame(render);
       }
     });
@@ -1377,6 +1544,20 @@
       },
       isLowPerf: function() {
         return isLowPerf;
+      },
+      setIdleTimeout: function(seconds) {
+        if (typeof seconds === 'number' && seconds > 0) {
+          idleTimeoutMs = seconds * 1000;
+        }
+      },
+      getIdleTimeout: function() {
+        return idleTimeoutMs / 1000;
+      },
+      isAutoCruising: function() {
+        return isAutoCruising;
+      },
+      triggerAutoCruise: function() {
+        lastInteractionTime = 0; // Trigger immediately on next frame
       }
     };
 
@@ -1430,6 +1611,20 @@
     isLowPerf: function() {
       if (activeInstance) return activeInstance.isLowPerf();
       return typeof document !== 'undefined' && document.documentElement && document.documentElement.classList.contains('low-perf');
+    },
+    setIdleTimeout: function(seconds) {
+      if (activeInstance) activeInstance.setIdleTimeout(seconds);
+    },
+    getIdleTimeout: function() {
+      if (activeInstance) return activeInstance.getIdleTimeout();
+      return 15;
+    },
+    isAutoCruising: function() {
+      if (activeInstance) return activeInstance.isAutoCruising();
+      return false;
+    },
+    triggerAutoCruise: function() {
+      if (activeInstance) activeInstance.triggerAutoCruise();
     }
   };
 });
