@@ -27,39 +27,49 @@
   'use strict';
 
   var SVG_MARKUP = [
-    '<svg class="spacecraft-svg" viewBox="0 0 24 34" width="24" height="34" fill="none" xmlns="http://www.w3.org/2000/svg">',
+    '<svg class="spacecraft-svg" viewBox="0 0 32 42" width="32" height="42" fill="none" xmlns="http://www.w3.org/2000/svg">',
     '  <defs>',
-    '    <linearGradient id="sc-hull-grad" x1="12" y1="2" x2="12" y2="24" gradientUnits="userSpaceOnUse">',
-    '      <stop offset="0%" stop-color="#2a384e" />',
-    '      <stop offset="50%" stop-color="#121824" />',
-    '      <stop offset="100%" stop-color="#070a10" />',
+    '    <linearGradient id="sc-hull-grad" x1="16" y1="2" x2="16" y2="30" gradientUnits="userSpaceOnUse">',
+    '      <stop offset="0%" stop-color="#38bdf8" />',
+    '      <stop offset="35%" stop-color="#1e293b" />',
+    '      <stop offset="100%" stop-color="#090d16" />',
     '    </linearGradient>',
-    '    <linearGradient id="sc-canopy-grad" x1="12" y1="7" x2="12" y2="15" gradientUnits="userSpaceOnUse">',
-    '      <stop offset="0%" stop-color="#ffffff" />',
-    '      <stop offset="45%" stop-color="#38bdf8" />',
-    '      <stop offset="100%" stop-color="#0284c7" />',
+    '    <linearGradient id="sc-wing-grad" x1="16" y1="10" x2="16" y2="28" gradientUnits="userSpaceOnUse">',
+    '      <stop offset="0%" stop-color="#1e293b" />',
+    '      <stop offset="50%" stop-color="#0f172a" />',
+    '      <stop offset="100%" stop-color="#020617" />',
     '    </linearGradient>',
-    '    <linearGradient id="sc-flame-grad" x1="12" y1="21" x2="12" y2="34" gradientUnits="userSpaceOnUse">',
+    '    <linearGradient id="sc-canopy-grad" x1="16" y1="7" x2="16" y2="18" gradientUnits="userSpaceOnUse">',
     '      <stop offset="0%" stop-color="#ffffff" />',
     '      <stop offset="30%" stop-color="#38bdf8" />',
-    '      <stop offset="70%" stop-color="#ff9933" />',
-    '      <stop offset="100%" stop-color="rgba(255, 153, 51, 0)" />',
+    '      <stop offset="80%" stop-color="#0284c7" />',
+    '      <stop offset="100%" stop-color="#0c4a6e" />',
     '    </linearGradient>',
-    '    <filter id="sc-glow" x="-40%" y="-40%" width="180%" height="180%">',
-    '      <feGaussianBlur stdDeviation="1" result="blur" />',
+    '    <linearGradient id="sc-flame-grad" x1="16" y1="26" x2="16" y2="41" gradientUnits="userSpaceOnUse">',
+    '      <stop offset="0%" stop-color="#ffffff" />',
+    '      <stop offset="25%" stop-color="#38bdf8" />',
+    '      <stop offset="70%" stop-color="#f97316" />',
+    '      <stop offset="100%" stop-color="rgba(249, 115, 22, 0)" />',
+    '    </linearGradient>',
+    '    <filter id="sc-glow" x="-30%" y="-30%" width="160%" height="160%">',
+    '      <feGaussianBlur stdDeviation="1.2" result="blur" />',
     '      <feComposite in="SourceGraphic" in2="blur" operator="over" />',
     '    </filter>',
     '  </defs>',
-    '  <path class="sc-flame" d="M 9.5 21.5 Q 12 32 14.5 21.5 Z" fill="url(#sc-flame-grad)" filter="url(#sc-glow)" />',
-    '  <path class="sc-hull" d="M 12 2 L 22.5 21 L 15 19 L 14 21.5 L 10 21.5 L 9 19 L 1.5 21 Z"',
-    '        fill="url(#sc-hull-grad)" stroke="#38bdf8" stroke-width="0.85" stroke-linejoin="round" />',
-    '  <line x1="12" y1="2" x2="12" y2="19" stroke="rgba(255, 255, 255, 0.3)" stroke-width="0.5" />',
-    '  <line x1="12" y1="6" x2="3.5" y2="20" stroke="rgba(56, 189, 248, 0.4)" stroke-width="0.5" />',
-    '  <line x1="12" y1="6" x2="20.5" y2="20" stroke="rgba(56, 189, 248, 0.4)" stroke-width="0.5" />',
-    '  <polygon class="sc-canopy" points="12,6.5 13.8,13.5 12,15 10.2,13.5" fill="url(#sc-canopy-grad)" />',
-    '  <circle class="sc-emitter" cx="2" cy="20.5" r="0.9" fill="#ff9933" filter="url(#sc-glow)" />',
-    '  <circle class="sc-emitter" cx="22" cy="20.5" r="0.9" fill="#ff9933" filter="url(#sc-glow)" />',
-    '  <circle class="sc-beacon" cx="12" cy="2" r="0.9" fill="#ffffff" filter="url(#sc-glow)" />',
+    '  <path class="sc-flame sc-flame-left" d="M 8.5 27 Q 10.5 40 12.5 27 Z" fill="url(#sc-flame-grad)" filter="url(#sc-glow)" />',
+    '  <path class="sc-flame sc-flame-right" d="M 19.5 27 Q 21.5 40 23.5 27 Z" fill="url(#sc-flame-grad)" filter="url(#sc-glow)" />',
+    '  <path class="sc-wings" d="M 16 11 L 30 23.5 L 30 25.5 L 24 24.5 L 22.5 27 L 19 27 L 17.5 24.5 L 14.5 24.5 L 13 27 L 9.5 27 L 8 24.5 L 2 25.5 L 2 23.5 Z" fill="url(#sc-wing-grad)" stroke="#38bdf8" stroke-width="0.85" stroke-linejoin="round" />',
+    '  <line x1="16" y1="13" x2="4" y2="23.5" stroke="rgba(56, 189, 248, 0.5)" stroke-width="0.6" />',
+    '  <line x1="16" y1="13" x2="28" y2="23.5" stroke="rgba(56, 189, 248, 0.5)" stroke-width="0.6" />',
+    '  <path class="sc-hull" d="M 16 2 L 19.5 12 L 18 26 L 14 26 L 12.5 12 Z" fill="url(#sc-hull-grad)" stroke="#38bdf8" stroke-width="0.9" stroke-linejoin="round" />',
+    '  <polygon class="sc-canopy" points="16,7.5 18,14.5 16,17 14,14.5" fill="url(#sc-canopy-grad)" stroke="rgba(255,255,255,0.7)" stroke-width="0.4" />',
+    '  <rect x="8.5" y="22" width="4" height="5" rx="1" fill="#1e293b" stroke="#38bdf8" stroke-width="0.7" />',
+    '  <rect x="19.5" y="22" width="4" height="5" rx="1" fill="#1e293b" stroke="#38bdf8" stroke-width="0.7" />',
+    '  <line x1="2" y1="19" x2="2" y2="25.5" stroke="#38bdf8" stroke-width="1.2" stroke-linecap="round" />',
+    '  <line x1="30" y1="19" x2="30" y2="25.5" stroke="#38bdf8" stroke-width="1.2" stroke-linecap="round" />',
+    '  <circle class="sc-emitter" cx="2" cy="19" r="0.9" fill="#f97316" filter="url(#sc-glow)" />',
+    '  <circle class="sc-emitter" cx="30" cy="19" r="0.9" fill="#f97316" filter="url(#sc-glow)" />',
+    '  <circle class="sc-beacon" cx="16" cy="2" r="1.1" fill="#ffffff" filter="url(#sc-glow)" />',
     '</svg>'
   ].join('');
 
@@ -107,6 +117,8 @@
       cursorEl.setAttribute('aria-hidden', 'true');
       cursorEl.innerHTML = SVG_MARKUP;
       document.body.appendChild(cursorEl);
+    } else if (!cursorEl.querySelector('.spacecraft-svg')) {
+      cursorEl.innerHTML = SVG_MARKUP;
     }
   }
 
@@ -127,7 +139,7 @@
 
     var craftEl = document.getElementById('spacecraft-cursor');
     var craftSvg = craftEl ? craftEl.querySelector('.spacecraft-svg') : null;
-    var craftFlame = craftEl ? craftEl.querySelector('.sc-flame') : null;
+    var craftFlames = craftEl ? craftEl.querySelectorAll('.sc-flame') : [];
 
     var width = 0;
     var height = 0;
@@ -221,6 +233,56 @@
 
     var prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
+    // --- LOW-PERFORMANCE & MOBILE FALLBACK STATE ---
+    var isLowPerf = false;
+    var fpsMonitorActive = true;
+    var frameDeltas = [];
+    var prevTimestamp = 0;
+    var totalFramesRendered = 0;
+    var FPS_CHECK_WINDOW = 45;
+    var WARMUP_FRAMES = 30;
+
+    function enableLowPerfMode(reason) {
+      if (isLowPerf) return;
+      isLowPerf = true;
+      fpsMonitorActive = false;
+
+      if (typeof document !== 'undefined' && document.documentElement) {
+        document.documentElement.classList.add('low-perf');
+      }
+
+      // Hide custom spaceship cursor and ion trail canvas
+      if (craftEl) {
+        craftEl.style.display = 'none';
+        craftEl.classList.remove('is-active', 'is-targeting', 'is-clicking');
+      }
+      if (trailCanvas) {
+        trailCanvas.style.display = 'none';
+        clearCraftTrail();
+      }
+      if (craft) {
+        craft.isActive = false;
+      }
+
+      // Untether any particles from tractor beam
+      for (var i = 0; i < nodes.length; i++) {
+        nodes[i].isTethered = false;
+        nodes[i].pulseStage = 0;
+      }
+      activeArcs = [];
+      shockwaves = [];
+    }
+
+    // Automatically trigger low-performance mode on mobile devices or if pre-flagged
+    var isMobileInit = (typeof navigator !== 'undefined' && /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) ||
+                       (typeof window !== 'undefined' && window.innerWidth <= 768) ||
+                       (typeof navigator !== 'undefined' && navigator.maxTouchPoints > 1 && window.innerWidth <= 1024) ||
+                       (typeof document !== 'undefined' && document.documentElement && (document.documentElement.classList.contains('low-perf') || document.documentElement.classList.contains('no-gpu')));
+
+    if (isMobileInit) {
+      enableLowPerfMode('mobile_or_no_gpu_init');
+    }
+
     // --- APPLY THEME ---
     function updateTheme(lightMode) {
       isLight = !!lightMode;
@@ -232,19 +294,35 @@
         nodes[i].theme = themes[key];
       }
 
-      // Update SVG hull gradient stops for light/dark titanium hull
+      // Update SVG hull & wing gradient stops for light/dark titanium hull
       var hullGrad = document.getElementById('sc-hull-grad');
       if (hullGrad) {
         var stops = hullGrad.querySelectorAll('stop');
         if (stops.length >= 3) {
           if (isLight) {
-            stops[0].setAttribute('stop-color', '#0369a1'); // Cobalt blue nose tip (sharp contrast, not white!)
-            stops[1].setAttribute('stop-color', '#64748b'); // Titanium slate mid-hull
-            stops[2].setAttribute('stop-color', '#cbd5e1'); // Light titanium aft
+            stops[0].setAttribute('stop-color', '#0284c7');
+            stops[1].setAttribute('stop-color', '#64748b');
+            stops[2].setAttribute('stop-color', '#cbd5e1');
           } else {
-            stops[0].setAttribute('stop-color', '#2a384e');
-            stops[1].setAttribute('stop-color', '#121824');
-            stops[2].setAttribute('stop-color', '#070a10');
+            stops[0].setAttribute('stop-color', '#38bdf8');
+            stops[1].setAttribute('stop-color', '#1e293b');
+            stops[2].setAttribute('stop-color', '#090d16');
+          }
+        }
+      }
+
+      var wingGrad = document.getElementById('sc-wing-grad');
+      if (wingGrad) {
+        var wStops = wingGrad.querySelectorAll('stop');
+        if (wStops.length >= 3) {
+          if (isLight) {
+            wStops[0].setAttribute('stop-color', '#cbd5e1');
+            wStops[1].setAttribute('stop-color', '#94a3b8');
+            wStops[2].setAttribute('stop-color', '#64748b');
+          } else {
+            wStops[0].setAttribute('stop-color', '#1e293b');
+            wStops[1].setAttribute('stop-color', '#0f172a');
+            wStops[2].setAttribute('stop-color', '#020617');
           }
         }
       }
@@ -309,32 +387,186 @@
       this.pulse = Math.random() * Math.PI * 2;
       this.pulseSpeed = 0.03 + Math.random() * 0.04;
       this.potential = Math.random();
+
+      // Tractor-beam dragging & fast-acceleration breakaway physics
+      this.isTethered = false;
+      this.tetherOffsetX = 0;
+      this.tetherOffsetY = 0;
+      this.tetherTime = 0;
+      this.breakCooldown = 0;
+
+      // Click convergence & blast repulsion states (Stage 1: move towards ship -> Stage 2: thrown away)
+      this.pulseStage = 0; // 0 = normal, 1 = move towards spaceship, 2 = thrown away
+      this.pulseTimer = 0;
+      this.pulseOriginX = 0;
+      this.pulseOriginY = 0;
     }
 
     Node.prototype.update = function() {
-      this.x += this.vx;
-      this.y += this.vy;
+      if (this.breakCooldown > 0) {
+        this.breakCooldown--;
+      }
 
-      if (this.x < 12) { this.x = 12; this.vx *= -1; }
-      else if (this.x > width - 12) { this.x = width - 12; this.vx *= -1; }
-      if (this.y < 12) { this.y = 12; this.vy *= -1; }
-      else if (this.y > height - 12) { this.y = height - 12; this.vy *= -1; }
+      var shipX = (craft && craft.isActive) ? craft.x : mouse.x;
+      var shipY = (craft && craft.isActive) ? craft.y : mouse.y;
+      var shipSpeed = (craft && craft.isActive) ? craft.speed : 0;
+      var shipActive = !isLowPerf && (mouse.isHovering || (craft && craft.isActive)) && shipX > -500 && shipY > -500;
+
+      // --- CLICK IMPULSE (STAGE 1: MOVE TOWARDS SHIP SLIGHTLY -> STAGE 2: THROWN AWAY) ---
+      if (this.pulseStage === 1) {
+        this.pulseTimer--;
+        var pDx = this.pulseOriginX - this.x;
+        var pDy = this.pulseOriginY - this.y;
+        var pDist = Math.hypot(pDx, pDy) || 1;
+
+        // Stage 1: Move towards spaceship slightly (attracted inward by energy convergence)
+        var inwardSpeed = Math.min(3.8, Math.max(1.8, pDist * 0.06));
+        this.vx = (pDx / pDist) * inwardSpeed;
+        this.vy = (pDy / pDist) * inwardSpeed;
+        this.x += this.vx;
+        this.y += this.vy;
+
+        if (Math.random() < 0.25) {
+          spawnSparks(this.x, this.y, 1, this.theme, 0.7);
+        }
+
+        if (this.pulseTimer <= 0) {
+          // Transition to Stage 2: THROWN AWAY from spaceship!
+          this.pulseStage = 2;
+          this.breakCooldown = 55; // Prevent tractor re-capture while escaping
+          this.isTethered = false;
+
+          var blastAngle = Math.atan2(this.y - this.pulseOriginY, this.x - this.pulseOriginX);
+          blastAngle += (Math.random() - 0.5) * 0.35; // Organic dispersal
+          var blastSpeed = 8.5 + Math.random() * 6.5; // High explosive exit speed!
+          this.vx = Math.cos(blastAngle) * blastSpeed;
+          this.vy = Math.sin(blastAngle) * blastSpeed;
+
+          spawnSparks(this.x, this.y, 4, this.theme, 1.8);
+        }
+
+        // Boundary rebound
+        if (this.x < 12) { this.x = 12; this.vx = Math.abs(this.vx); }
+        else if (this.x > width - 12) { this.x = width - 12; this.vx = -Math.abs(this.vx); }
+        if (this.y < 12) { this.y = 12; this.vy = Math.abs(this.vy); }
+        else if (this.y > height - 12) { this.y = height - 12; this.vy = -Math.abs(this.vy); }
+
+        this.pulse += this.pulseSpeed;
+        return;
+      }
+
+      if (this.pulseStage === 2) {
+        // Stage 2: Flying away from ship, dampening velocity gradually
+        this.x += this.vx;
+        this.y += this.vy;
+        this.vx *= 0.94;
+        this.vy *= 0.94;
+
+        if (Math.hypot(this.vx, this.vy) < 0.8) {
+          this.pulseStage = 0; // Return to standard ambient state
+        }
+
+        // Boundary rebound
+        if (this.x < 12) { this.x = 12; this.vx = Math.abs(this.vx); }
+        else if (this.x > width - 12) { this.x = width - 12; this.vx = -Math.abs(this.vx); }
+        if (this.y < 12) { this.y = 12; this.vy = Math.abs(this.vy); }
+        else if (this.y > height - 12) { this.y = height - 12; this.vy = -Math.abs(this.vy); }
+
+        this.pulse += this.pulseSpeed;
+        return;
+      }
+
+      if (shipActive) {
+        var dx = shipX - this.x;
+        var dy = shipY - this.y;
+        var dist = Math.hypot(dx, dy);
+
+        if (this.isTethered) {
+          // Breakaway condition: mouse accelerates quickly (speed >= 7.2 px/frame) or pulled too far (> 180px)
+          if (shipSpeed >= 7.2 || dist > 180) {
+            this.isTethered = false;
+            this.breakCooldown = 35; // Cooldown frames before it can be re-captured
+
+            // Slingshot detachment: particle breaks loose with momentum flung outward/into wake
+            var escapeAngle = Math.atan2(this.y - shipY, this.x - shipX) + (Math.random() - 0.5) * 0.8;
+            var escapeSpeed = 1.6 + Math.random() * 2.4;
+            this.vx = Math.cos(escapeAngle) * escapeSpeed;
+            this.vy = Math.sin(escapeAngle) * escapeSpeed;
+
+            // Visual spark release when breaking loose
+            if (Math.random() < 0.75) {
+              spawnSparks(this.x, this.y, 4, this.theme, 1.4);
+            }
+          } else {
+            // TETHERED DRAG MODE: dragged along with the spaceship
+            this.tetherTime++;
+            var orbitAngle = this.tetherTime * 0.04;
+            var targetX = shipX + this.tetherOffsetX + Math.cos(orbitAngle) * 6;
+            var targetY = shipY + this.tetherOffsetY + Math.sin(orbitAngle) * 6;
+
+            // Smooth dragging spring towards the target position
+            var followEase = Math.min(0.20, 0.08 + (shipSpeed * 0.025));
+            this.x += (targetX - this.x) * followEase;
+            this.y += (targetY - this.y) * followEase;
+
+            // Maintain velocity matching drag
+            this.vx = (targetX - this.x) * 0.06;
+            this.vy = (targetY - this.y) * 0.06;
+          }
+        } else {
+          // UNTETHERED: GRAVITATIONAL TRACTOR PULL AT SLOW SPEEDS
+          var tractorRadius = cursorRadius || 140;
+          if (dist < tractorRadius && this.breakCooldown <= 0) {
+            if (shipSpeed < 6.8) {
+              // Gentle attraction force: increases as it gets closer
+              var pullForce = Math.pow(1 - dist / tractorRadius, 1.5) * 1.5;
+              var dirX = dx / (dist || 1);
+              var dirY = dy / (dist || 1);
+
+              this.vx += dirX * pullForce * 0.25;
+              this.vy += dirY * pullForce * 0.25;
+              this.vx *= 0.93;
+              this.vy *= 0.93;
+
+              // Capture threshold: when within 75px, lock into tethered dragging!
+              if (dist < 75) {
+                this.isTethered = true;
+                this.tetherTime = 0;
+                var angle = Math.atan2(this.y - shipY, this.x - shipX);
+                var radiusLock = Math.max(38, Math.min(dist, 70));
+                this.tetherOffsetX = Math.cos(angle) * radiusLock;
+                this.tetherOffsetY = Math.sin(angle) * radiusLock;
+                spawnSparks(this.x, this.y, 2, this.theme, 0.8);
+              }
+            }
+          }
+        }
+      } else if (this.isTethered) {
+        this.isTethered = false;
+      }
+
+      // If not tethered, apply standard drift physics
+      if (!this.isTethered) {
+        this.x += this.vx;
+        this.y += this.vy;
+
+        // Friction dampening towards natural drift speed
+        var curSpeed = Math.hypot(this.vx, this.vy);
+        if (curSpeed > 0.5) {
+          this.vx *= 0.97;
+          this.vy *= 0.97;
+        }
+      }
+
+      // Boundary rebound
+      if (this.x < 12) { this.x = 12; this.vx = Math.abs(this.vx); this.isTethered = false; }
+      else if (this.x > width - 12) { this.x = width - 12; this.vx = -Math.abs(this.vx); this.isTethered = false; }
+      if (this.y < 12) { this.y = 12; this.vy = Math.abs(this.vy); this.isTethered = false; }
+      else if (this.y > height - 12) { this.y = height - 12; this.vy = -Math.abs(this.vy); this.isTethered = false; }
 
       this.pulse += this.pulseSpeed;
       this.potential += 0.012;
       if (this.potential > 1) this.potential = 0;
-
-      if (mouse.isHovering) {
-        var dx = mouse.x - this.x;
-        var dy = mouse.y - this.y;
-        var distSq = dx * dx + dy * dy;
-        if (distSq < cursorRadiusSq && distSq > 9) {
-          var dist = Math.sqrt(distSq);
-          var force = (1 - dist / cursorRadius) * 0.04;
-          this.x += (dx / dist) * force;
-          this.y += (dy / dist) * force;
-        }
-      }
     };
 
     Node.prototype.draw = function() {
@@ -622,21 +854,39 @@
       }
     }
 
-    function triggerElectricBurst(x, y) {
-      var burstTheme = Math.random() < 0.5 ? themes.amber : themes.cyan;
-      shockwaves.push(new Shockwave(x, y, burstTheme));
-      spawnSparks(x, y, 20, burstTheme, 2.2);
-      flashOpacity = 0.09;
+    var burstSecondaryShockwaveTimer = 0;
+    var burstOrigin = { x: 0, y: 0 };
+    var burstTheme = null;
 
-      var burstRadiusSq = 270 * 270;
-      var arcCount = 0;
-      for (var i = 0; i < nodes.length && arcCount < 8; i++) {
+    function triggerElectricBurst(x, y) {
+      burstTheme = Math.random() < 0.5 ? themes.amber : themes.cyan;
+      shockwaves.push(new Shockwave(x, y, burstTheme));
+      spawnSparks(x, y, 16, burstTheme, 2.0);
+      flashOpacity = 0.12;
+
+      burstOrigin.x = x;
+      burstOrigin.y = y;
+      burstSecondaryShockwaveTimer = 8; // Secondary detonation shockwave when particles are thrown away
+
+      var burstRadius = 320;
+      var target = (craft && craft.isActive) ? craft : { x: x, y: y };
+
+      for (var i = 0; i < nodes.length; i++) {
         var node = nodes[i];
         var dx = node.x - x;
         var dy = node.y - y;
-        if (dx * dx + dy * dy < burstRadiusSq) {
-          activeArcs.push(new DischargeArc({ x: x, y: y }, node, node.theme, 9 + Math.floor(Math.random() * 5), 1.85, true));
-          arcCount++;
+        var dist = Math.hypot(dx, dy);
+
+        if (dist < burstRadius) {
+          // 1. Pass lightning from nearby particle TO the spacecraft
+          activeArcs.push(new DischargeArc(node, target, node.theme, 8 + Math.floor(Math.random() * 4), 2.0, true));
+
+          // 2. Two-stage kinetic impulse: first move towards spaceship slightly, then get thrown away!
+          node.isTethered = false;
+          node.pulseStage = 1; // Stage 1: Move towards ship slightly
+          node.pulseTimer = 7 + Math.floor(Math.random() * 3); // 7-9 frames (~120-150ms inward)
+          node.pulseOriginX = x;
+          node.pulseOriginY = y;
         }
       }
     }
@@ -683,12 +933,15 @@
       }
 
       var renderY = craft.y + craft.scrollOffsetY;
-      craftEl.style.transform = 'translate(' + (craft.x - 12) + 'px, ' + (renderY - 14) + 'px)';
+      craftEl.style.transform = 'translate(' + (craft.x - 16) + 'px, ' + (renderY - 18) + 'px)';
 
       // 5. Thruster flame scale
-      if (craftFlame) {
+      if (craftFlames && craftFlames.length) {
         var flameScale = prefersReducedMotion ? 1 : 1 + Math.min(craft.speed / 8, 1.4);
-        craftFlame.style.transform = 'scaleY(' + flameScale.toFixed(2) + ')';
+        var flameScaleStr = 'scaleY(' + flameScale.toFixed(2) + ')';
+        for (var fl = 0; fl < craftFlames.length; fl++) {
+          craftFlames[fl].style.transform = flameScaleStr;
+        }
       }
 
       // 6. Dual-nozzle ion exhaust stream
@@ -696,8 +949,8 @@
         var dirX = Math.sin(craft.angle);
         var dirY = -Math.cos(craft.angle);
 
-        var nozzleDist = 9.5;
-        var nozzleOffset = 3.0;
+        var nozzleDist = 9.0;
+        var nozzleOffset = 5.5;
         var perpX = -dirY * nozzleOffset;
         var perpY = dirX * nozzleOffset;
 
@@ -729,7 +982,32 @@
     function render(currentTime) {
       if (!isVisible) return;
 
-      var targetInterval = mouse.isHovering ? 16 : 24;
+      // Track sustained rolling average FPS; trigger low-perf mode if sustained FPS drops below 30
+      if (fpsMonitorActive && currentTime) {
+        if (prevTimestamp > 0) {
+          var delta = currentTime - prevTimestamp;
+          totalFramesRendered++;
+          if (totalFramesRendered > WARMUP_FRAMES) {
+            frameDeltas.push(delta);
+            if (frameDeltas.length >= FPS_CHECK_WINDOW) {
+              var sum = 0;
+              for (var f = 0; f < frameDeltas.length; f++) {
+                sum += frameDeltas[f];
+              }
+              var avgDelta = sum / frameDeltas.length;
+              var avgFps = 1000 / avgDelta;
+              if (avgFps < 30) {
+                enableLowPerfMode('fps_below_30 (' + avgFps.toFixed(1) + ' fps)');
+              } else {
+                frameDeltas.shift();
+              }
+            }
+          }
+        }
+        prevTimestamp = currentTime;
+      }
+
+      var targetInterval = isLowPerf ? 33 : (mouse.isHovering ? 16 : 24);
       if (currentTime && (currentTime - lastFrameTime < targetInterval)) {
         rafId = requestAnimationFrame(render);
         return;
@@ -747,6 +1025,16 @@
         flashOpacity *= 0.82;
       }
 
+      if (burstSecondaryShockwaveTimer > 0) {
+        burstSecondaryShockwaveTimer--;
+        if (burstSecondaryShockwaveTimer === 0) {
+          var repTheme = burstTheme || themes.cyan;
+          shockwaves.push(new Shockwave(burstOrigin.x, burstOrigin.y, repTheme));
+          spawnSparks(burstOrigin.x, burstOrigin.y, 22, repTheme, 2.4);
+          flashOpacity = 0.08;
+        }
+      }
+
       if (mouse.isHovering) {
         mouse.x += (mouse.targetX - mouse.x) * 0.18;
         mouse.y += (mouse.targetY - mouse.y) * 0.18;
@@ -760,6 +1048,17 @@
       for (var i = 0; i < len; i++) {
         nodes[i].update();
         nodes[i].draw();
+      }
+
+      // Tractor-beam glowing filaments for tethered particles (disabled in low-perf)
+      if (!isLowPerf) {
+        var shipX = (craft && craft.isActive) ? craft.x : mouse.x;
+        var shipY = (craft && craft.isActive) ? craft.y : mouse.y;
+        for (var tn = 0; tn < len; tn++) {
+          if (nodes[tn].isTethered) {
+            drawLiveFilament(shipX, shipY, nodes[tn].x, nodes[tn].y, nodes[tn].theme, 0.95);
+          }
+        }
       }
 
       for (var a = 0; a < len; a++) {
@@ -801,8 +1100,8 @@
         }
       }
 
-      // Proximity lightning to spacecraft
-      if (mouse.isHovering) {
+      // Proximity lightning to spacecraft (disabled in low-perf)
+      if (!isLowPerf && mouse.isHovering) {
         var closeNodes = [];
         for (var c = 0; c < len; c++) {
           var nd = nodes[c];
@@ -852,13 +1151,16 @@
       }
 
       ctx.globalCompositeOperation = 'source-over';
-      updateCraft();
+      if (!isLowPerf) {
+        updateCraft();
+      }
 
       rafId = requestAnimationFrame(render);
     }
 
     // --- INTERACTION LISTENERS ---
     function handlePointerMove(clientX, clientY) {
+      if (isLowPerf) return;
       mouse.targetX = clientX;
       mouse.targetY = clientY;
       if (!mouse.isHovering) {
@@ -889,7 +1191,7 @@
 
         craft.x = clientX;
         craft.y = clientY;
-        craftEl.style.transform = 'translate(' + (clientX - 12) + 'px, ' + (clientY - 14) + 'px)';
+        craftEl.style.transform = 'translate(' + (clientX - 16) + 'px, ' + (clientY - 18) + 'px)';
       }
     }
 
@@ -902,16 +1204,27 @@
     }, { passive: true });
 
     window.addEventListener('mouseover', function(e) {
-      if (!craftEl) return;
+      if (!craftEl || isLowPerf) return;
       var target = e.target;
+      if (target && target.closest && target.closest('#top-ce, #comment-editor, .comments, .comment-form')) {
+        craftEl.style.opacity = '0';
+        return;
+      }
       var isInteractive = target && target.closest && target.closest('a, button, input, textarea, select, [role="button"], [tabindex]:not([tabindex="-1"]), .fx-glass-card, .fx-glass-btn');
       if (isInteractive) craftEl.classList.add('is-targeting');
       else craftEl.classList.remove('is-targeting');
     }, { passive: true });
 
-    window.addEventListener('pointerdown', function(e) {
-      handlePointerMove(e.clientX, e.clientY);
-      triggerElectricBurst(e.clientX, e.clientY);
+    var lastBurstTime = 0;
+    function executeClickBurst(clientX, clientY) {
+      if (isLowPerf) return;
+      var now = Date.now();
+      if (now - lastBurstTime < 80) return;
+      lastBurstTime = now;
+
+      handlePointerMove(clientX, clientY);
+      triggerElectricBurst(clientX, clientY);
+
       if (craftEl) {
         craft.isClicking = true;
         craftEl.classList.add('is-clicking');
@@ -930,8 +1243,12 @@
             ));
           }
         }
-        spawnSparks(e.clientX, e.clientY, 3, themes.amber, 1.2);
+        spawnSparks(clientX, clientY, 4, themes.amber, 1.4);
       }
+    }
+
+    window.addEventListener('pointerdown', function(e) {
+      executeClickBurst(e.clientX, e.clientY);
     }, { passive: true });
 
     window.addEventListener('pointerup', function() {
@@ -942,8 +1259,7 @@
     }, { passive: true });
 
     window.addEventListener('mousedown', function(e) {
-      handlePointerMove(e.clientX, e.clientY);
-      triggerElectricBurst(e.clientX, e.clientY);
+      executeClickBurst(e.clientX, e.clientY);
     }, { passive: true });
 
     document.addEventListener('mouseleave', function() {
@@ -1055,6 +1371,12 @@
       },
       getTheme: function() {
         return isLight ? 'light' : 'dark';
+      },
+      enableLowPerfMode: function(reason) {
+        enableLowPerfMode(reason || 'manual');
+      },
+      isLowPerf: function() {
+        return isLowPerf;
       }
     };
 
@@ -1098,6 +1420,16 @@
     getTheme: function() {
       if (activeInstance) return activeInstance.getTheme();
       return checkIsLightMode() ? 'light' : 'dark';
+    },
+    enableLowPerfMode: function(reason) {
+      if (activeInstance) return activeInstance.enableLowPerfMode(reason);
+      if (typeof document !== 'undefined' && document.documentElement) {
+        document.documentElement.classList.add('low-perf');
+      }
+    },
+    isLowPerf: function() {
+      if (activeInstance) return activeInstance.isLowPerf();
+      return typeof document !== 'undefined' && document.documentElement && document.documentElement.classList.contains('low-perf');
     }
   };
 });

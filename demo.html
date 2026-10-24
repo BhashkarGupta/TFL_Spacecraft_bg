@@ -68,6 +68,28 @@
       font-size: 14px;
     }
 
+    .demo-nav-actions {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .nav-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 14px;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+    }
+
+    .nav-btn svg {
+      width: 15px;
+      height: 15px;
+      flex-shrink: 0;
+    }
+
     .demo-content {
       position: relative;
       z-index: 1;
@@ -190,63 +212,87 @@
 </head>
 <body>
 
-  <!-- Floating Glass Header -->
+  <!-- Floating Header with Theme Switcher and Mode Controls -->
   <header class="demo-header">
     <div class="demo-logo">
-      <span class="demo-logo-icon">🚀</span>
+      <span class="demo-logo-icon">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
+          <path d="M12 2.5s-4 4.5-4 9.5c0 2.2 1.3 4 3 4.8V19l1 2 1-2v-2.2c1.7-.8 3-2.6 3-4.8 0-5-4-9.5-4-9.5zM6 13c-.6 0-1 .4-1 1 0 2.5 1.5 4.5 3 5.2V16.5C6.8 15.6 6 14.4 6 13zm12 0c0 1.4-.8 2.6-2 3.5v2.7c1.5-.7 3-2.7 3-5.2 0-.6-.4-1-1-1z"/>
+        </svg>
+      </span>
       <span>TFL Spacecraft-bg</span>
     </div>
-    <button id="theme-toggle-btn" class="fx-glass-btn fx-glass-btn-secondary" style="padding: 8px 18px; font-size: 13.5px;" aria-label="Toggle light or dark theme">
-      <span id="theme-icon">☀️</span>
-      <span id="theme-label">Light Mode</span>
-    </button>
+
+    <div class="demo-nav-actions">
+      <!-- Mode activation toggle -->
+      <button id="lowperf-toggle-btn" class="fx-glass-btn fx-glass-btn-secondary nav-btn" title="Toggle Low-Performance Mode (< 30 FPS mode)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+        </svg>
+        <span id="lowperf-label">Performance Mode</span>
+      </button>
+
+      <!-- Theme Switcher -->
+      <button id="theme-toggle-btn" class="fx-glass-btn fx-glass-btn-secondary nav-btn" aria-label="Toggle light or dark theme" title="Toggle Light / Dark Theme">
+        <span id="theme-icon">
+          <!-- Default Moon Icon for Dark Theme -->
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+          </svg>
+        </span>
+        <span id="theme-label">Light Mode</span>
+      </button>
+    </div>
   </header>
 
-  <!-- Demo Content (Glass cards & interactive buttons) -->
+  <!-- Demo Content -->
   <main class="demo-content">
     <h1>TFL Spacecraft-bg</h1>
     <p class="lead">
-      An interactive background and spacecraft cursor effect engine featuring high-voltage electric plasma networks, cosmic nebula clouds, real-time banking orientation, dual ion exhaust trails, and seamless theme responsiveness.
+      An interactive background and spacecraft flight cursor engine featuring high-voltage electric plasma networks, dual-mode tractor beam dynamics, interactive kinetic click shockwaves, cosmic nebula clouds, real-time banking orientation, dual ion exhaust trails, and adaptive performance fallback across both light and dark themes.
     </p>
 
-    <!-- Interactive Buttons -->
-    <div class="btn-group">
-      <button class="fx-glass-btn fx-glass-btn-primary" onclick="document.getElementById('theme-toggle-btn').click();">
-        <span>🌓 Switch Theme</span>
-      </button>
-    </div>
-
-    <!-- Features Cards Grid -->
+    <!-- Features Cards Grid (6 Interactive Features) -->
     <div class="cards-grid">
       <div class="fx-glass-card card">
         <div class="card-inner">
-          <span class="card-icon">⚡</span>
           <h3>1. Electric Plasma Network</h3>
-          <p>Interactive high-voltage canvas nodes, branched electric arc discharges, atmospheric super-arcs, and dynamic shockwaves on click.</p>
+          <p>Interactive canvas nodes drift autonomously, generating dynamic high-voltage branched electric arcs and atmospheric super-arc filaments connecting neighboring charges.</p>
         </div>
       </div>
 
       <div class="fx-glass-card card">
         <div class="card-inner">
-          <span class="card-icon">🚀</span>
-          <h3>2. Spacecraft Flight Cursor</h3>
-          <p>Zero-lag 1:1 hardware mouse tracking with 360° directional banking rotation, target lock-on interactions, and dual ion thruster trails.</p>
+          <h3>2. Interactive Particle Interaction</h3>
+          <p>Moving the spacecraft cursor near nodes automatically forms live glowing electrical tethers, drawing nearby particles into flight formation at cruising speeds.</p>
         </div>
       </div>
 
       <div class="fx-glass-card card">
         <div class="card-inner">
-          <span class="card-icon">🌊</span>
-          <h3>3. Scroll Acceleration</h3>
-          <p>Mouse wheel scrolling triggers vertical dive and climb dynamics with instantaneous thruster impulse expansion.</p>
+          <h3>3. Kinetic Click Burst & Shockwaves</h3>
+          <p>Clicking anywhere triggers a rapid two-stage kinetic impulse: surrounding particles briefly pull inward before being violently blasted outward with radial shockwaves and spark bursts.</p>
         </div>
       </div>
 
       <div class="fx-glass-card card">
         <div class="card-inner">
-          <span class="card-icon">🌓</span>
-          <h3>4. Adaptive Theme Engine</h3>
-          <p>Fully reactive design system that dynamically recalculates canvas palettes, nebula glows, and UI elements across dark and light modes.</p>
+          <h3>4. Slingshot Acceleration Breakaway</h3>
+          <p>When the spacecraft accelerates rapidly, tethered nodes experience breaking strain, flinging loose into the slipstream with visible kinetic spark discharges.</p>
+        </div>
+      </div>
+
+      <div class="fx-glass-card card">
+        <div class="card-inner">
+          <h3>5. Flight Cursor & Dual Ion Exhaust</h3>
+          <p>Hardware-level 1:1 cursor tracking with 360-degree directional vector banking, interactive element targeting lock, dual nozzle flame scaling, and persistent glowing particle trails.</p>
+        </div>
+      </div>
+
+      <div class="fx-glass-card card">
+        <div class="card-inner">
+          <h3>6. Adaptive Performance Engine</h3>
+          <p>Built-in rolling FPS monitor automatically switches to lightweight zero-blur translucent styling if sustained frame rates drop below 30 FPS or when operating on mobile devices.</p>
         </div>
       </div>
     </div>
@@ -255,7 +301,7 @@
       <h2>Drop-in Standalone Engine</h2>
       <p>Simply import <code>spacecraft-fx.css</code> and <code>spacecraft-fx.js</code> into any web project. Supports theme toggle via <code>data-theme="light"</code> or <code>SpacecraftFX.toggleTheme()</code>.</p>
       <button class="fx-glass-btn fx-glass-btn-primary" onclick="window.scrollTo({top: 0, behavior: 'smooth'});">
-        <span>🚀 Return to Top</span>
+        <span>Return to Top</span>
       </button>
     </div>
 
@@ -272,13 +318,16 @@
     var themeIcon = document.getElementById('theme-icon');
     var themeLabel = document.getElementById('theme-label');
 
+    var sunSvg = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>';
+    var moonSvg = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>';
+
     function syncThemeUI(theme) {
       if (theme === 'light') {
-        themeIcon.textContent = '🌙';
+        themeIcon.innerHTML = moonSvg;
         themeLabel.textContent = 'Dark Mode';
         document.querySelector('meta[name="theme-color"]').setAttribute('content', '#f1f5f9');
       } else {
-        themeIcon.textContent = '☀️';
+        themeIcon.innerHTML = sunSvg;
         themeLabel.textContent = 'Light Mode';
         document.querySelector('meta[name="theme-color"]').setAttribute('content', '#06080d');
       }
@@ -298,6 +347,27 @@
 
     // Check initial state
     syncThemeUI(document.documentElement.getAttribute('data-theme') || 'dark');
+
+    // Low-perf / < 30 FPS toggle interaction
+    var lowperfBtn = document.getElementById('lowperf-toggle-btn');
+    var lowperfLabel = document.getElementById('lowperf-label');
+    if (lowperfBtn) {
+      lowperfBtn.addEventListener('click', function() {
+        var isLow = document.documentElement.classList.contains('low-perf');
+        if (!isLow) {
+          if (window.SpacecraftFX && window.SpacecraftFX.enableLowPerfMode) {
+            window.SpacecraftFX.enableLowPerfMode('demo_button_clicked');
+          } else {
+            document.documentElement.classList.add('low-perf');
+          }
+          lowperfLabel.textContent = 'Low-Perf Active';
+          lowperfBtn.style.borderColor = 'var(--fx-accent)';
+          lowperfBtn.style.color = 'var(--fx-accent)';
+        } else {
+          location.reload();
+        }
+      });
+    }
   </script>
 </body>
 </html>

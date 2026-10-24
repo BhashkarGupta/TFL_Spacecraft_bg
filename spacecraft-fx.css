@@ -14,8 +14,8 @@
   --fx-vignette: radial-gradient(ellipse 90% 85% at 50% 50%, rgba(6, 8, 13, 0.22) 35%, rgba(6, 8, 13, 0.76) 78%, #06080d 100%);
 
   /* Liquid Glass Slab Tokens (Dark) */
-  --fx-glass-bg: rgba(13, 17, 28, 0.4);
-  --fx-glass-bg-hover: rgba(18, 25, 42, 0.52);
+  --fx-glass-bg: rgba(13, 17, 28, 0.22);
+  --fx-glass-bg-hover: rgba(18, 25, 42, 0.32);
   --fx-glass-border: rgba(255, 255, 255, 0.12);
   --fx-glass-border-hover: rgba(255, 153, 51, 0.55);
   --fx-glass-blur: blur(20px) saturate(190%);
@@ -43,8 +43,8 @@
   --fx-vignette: radial-gradient(ellipse 90% 85% at 50% 50%, rgba(241, 245, 249, 0.25) 35%, rgba(226, 232, 240, 0.75) 78%, #e2e8f0 100%);
 
   /* Liquid Glass Slab Tokens (Light) - Uniform 4-Sided Border & Clean Refraction */
-  --fx-glass-bg: rgba(255, 255, 255, 0.38);
-  --fx-glass-bg-hover: rgba(255, 255, 255, 0.52);
+  --fx-glass-bg: rgba(255, 255, 255, 0.22);
+  --fx-glass-bg-hover: rgba(255, 255, 255, 0.35);
   --fx-glass-border: rgba(15, 23, 42, 0.1);
   --fx-glass-border-hover: rgba(234, 88, 12, 0.55);
   --fx-glass-blur: blur(20px) saturate(200%);
@@ -235,14 +235,14 @@
   position: fixed;
   top: 0;
   left: 0;
-  width: 24px;
-  height: 34px;
+  width: 32px;
+  height: 42px;
   pointer-events: none;
-  z-index: 100000;
+  z-index: 2147483647;
   opacity: 0;
   will-change: transform, opacity;
   transition: opacity 0.22s ease-out;
-  display: none;
+  display: block;
 }
 
 .spacecraft-cursor.is-active {
@@ -253,7 +253,7 @@
   display: block;
   width: 100%;
   height: 100%;
-  transform-origin: 12px 14px;
+  transform-origin: 16px 18px;
   will-change: transform;
   overflow: visible;
 }
@@ -262,8 +262,14 @@
 [data-theme="light"] .sc-hull,
 .light-theme .sc-hull {
   stroke: #0284c7;
-  stroke-width: 1px;
+  stroke-width: 1.2px;
   filter: drop-shadow(0 2px 4px rgba(15, 23, 42, 0.25));
+}
+
+[data-theme="light"] .sc-wings,
+.light-theme .sc-wings {
+  stroke: #0369a1;
+  stroke-width: 1px;
 }
 
 [data-theme="light"] .sc-canopy,
@@ -284,41 +290,132 @@
 }
 
 /* Hover targeting feedback */
-.spacecraft-cursor.is-targeting .sc-hull {
+.spacecraft-cursor.is-targeting .sc-hull,
+.spacecraft-cursor.is-targeting .sc-wings {
   stroke: var(--fx-accent);
-  filter: drop-shadow(0 0 5px rgba(var(--fx-accent-rgb), 0.7));
+  filter: drop-shadow(0 0 6px rgba(var(--fx-accent-rgb), 0.75));
 }
 
 .spacecraft-cursor.is-targeting .sc-canopy {
   fill: var(--fx-accent);
 }
 
-/* Engine Flame Flicker Animation */
-.sc-flame {
-  transform-origin: 12px 21.5px;
-  animation: scFlameFlicker 0.12s ease-in-out infinite alternate;
+/* Dual Engine Flames Flicker Animation */
+.sc-flame-left {
+  transform-origin: 10.5px 27px;
+  animation: scFlameFlickerLeft 0.11s ease-in-out infinite alternate;
 }
 
-@keyframes scFlameFlicker {
-  0% { opacity: 0.82; transform: scaleY(0.92); }
-  100% { opacity: 1; transform: scaleY(1.12); }
+.sc-flame-right {
+  transform-origin: 21.5px 27px;
+  animation: scFlameFlickerRight 0.13s ease-in-out infinite alternate;
 }
 
-/* Hide default cursor on desktop pointer devices */
-@media (pointer: fine) {
-  body, a, button, input, textarea, select, label, [role="button"], [tabindex]:not([tabindex="-1"]) {
+@keyframes scFlameFlickerLeft {
+  0% { opacity: 0.8; transform: scaleY(0.9); }
+  100% { opacity: 1; transform: scaleY(1.15); }
+}
+
+@keyframes scFlameFlickerRight {
+  0% { opacity: 0.85; transform: scaleY(1.15); }
+  100% { opacity: 0.95; transform: scaleY(0.9); }
+}
+
+/* Hide default cursor on desktop pointer devices ONLY when not low-perf or no-gpu */
+@media (any-pointer: fine), (hover: hover), (pointer: fine) {
+  html:not(.no-gpu):not(.low-perf),
+  html:not(.no-gpu):not(.low-perf) body,
+  html:not(.no-gpu):not(.low-perf) * {
     cursor: none !important;
   }
-  .spacecraft-cursor {
-    display: block;
-  }
 }
 
-/* Fallback: hide custom cursor and trail on touch / mobile devices */
-@media (pointer: coarse), (hover: none) {
+/* Fallback: hide custom cursor and trail on touch-only mobile devices */
+@media (hover: none) and (pointer: coarse) {
   .spacecraft-cursor,
   .spacecraft-trail-canvas {
     display: none !important;
+  }
+}
+
+/* Fallback: Restore standard normal native cursor when running in low-perf or without GPU */
+.no-gpu,
+.no-gpu body,
+.no-gpu *,
+.low-perf,
+.low-perf body,
+.low-perf * {
+  cursor: auto !important;
+}
+.no-gpu a,
+.no-gpu button,
+.no-gpu [role="button"],
+.low-perf a,
+.low-perf button,
+.low-perf [role="button"] {
+  cursor: pointer !important;
+}
+.no-gpu input,
+.no-gpu textarea,
+.low-perf input,
+.low-perf textarea {
+  cursor: text !important;
+}
+.no-gpu .spacecraft-cursor,
+.no-gpu .spacecraft-trail-canvas,
+.low-perf .spacecraft-cursor,
+.low-perf .spacecraft-trail-canvas {
+  display: none !important;
+}
+.no-gpu .cyber-nebula-clouds,
+.no-gpu .nebula-cloud,
+.low-perf .cyber-nebula-clouds,
+.low-perf .nebula-cloud {
+  display: none !important;
+  animation: none !important;
+  filter: none !important;
+}
+
+/* ── Low-Performance & Mobile Translucent Window Mode (Zero Blur GPU Overhead) ── */
+.low-perf *,
+.low-perf *::before,
+.low-perf *::after {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+.low-perf {
+  --fx-glass-blur: none !important;
+  --fx-glass-bg: rgba(255, 255, 255, 0.90) !important;
+  --fx-glass-bg-hover: rgba(248, 250, 252, 0.95) !important;
+  --fx-glass-border: rgba(15, 23, 42, 0.12) !important;
+  --fx-glass-shadow: 0 4px 16px rgba(15, 23, 42, 0.08) !important;
+}
+
+[data-theme="dark"].low-perf,
+.is-dark.low-perf {
+  --fx-glass-blur: none !important;
+  --fx-glass-bg: rgba(13, 17, 28, 0.88) !important;
+  --fx-glass-bg-hover: rgba(22, 30, 48, 0.92) !important;
+  --fx-glass-border: rgba(255, 255, 255, 0.12) !important;
+  --fx-glass-shadow: 0 4px 16px rgba(0, 0, 0, 0.4) !important;
+}
+
+@media (max-width: 768px), (pointer: coarse) and (hover: none) {
+  .cyber-nebula-clouds,
+  .nebula-cloud {
+    display: none !important;
+    animation: none !important;
+    filter: none !important;
+  }
+  .spacecraft-cursor,
+  .spacecraft-trail-canvas {
+    display: none !important;
+  }
+  .fx-glass-card,
+  .fx-glass-btn {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
   }
 }
 
