@@ -7,7 +7,8 @@ A lightweight, zero-dependency visual effect engine featuring an interactive ele
 ## Features
 
 - **Electric Plasma Network**: Interactive canvas nodes, branched electric arc discharges, and shockwaves on click.
-- **Tractor Beam and Kinetic Impulse**: Nearby nodes are drawn towards the spacecraft at low speeds and slingshotted away during rapid movement or clicks.
+- **Hold-to-Charge Attraction and Kinetic Burst**: Press and hold the mouse button to charge energy and continuously expand the attraction radius, pulling in distant particles. Attracted particles arc with the spacecraft—subtly at a distance and intensifying with fractal lightning and sparks as they draw close. Releasing pulls particles slightly closer before violently repelling them away with scaled radial shockwaves and kinetic velocity.
+- **Tractor Beam and Slingshot Breakaway**: Nearby nodes are drawn towards the spacecraft at cruising speeds and slingshotted away into the wake during rapid movement.
 - **Spacecraft Flight Cursor**: 1:1 hardware mouse tracking with 360-degree directional banking, dual flame exhausts, and glowing ion trails.
 - **Scroll Acceleration**: Dynamic vertical dive and climb offset coupled to mouse wheel or page scrolling.
 - **Idle Autopilot Cruise**: If no user interaction occurs for 15 seconds (customizable), the spacecraft automatically embarks on a smooth celestial cruise across the page, waking upon mouse or keyboard interaction.

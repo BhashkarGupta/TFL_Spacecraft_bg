@@ -278,6 +278,12 @@
       isClicking: false
     };
 
+    // Hold-to-Charge Mechanics
+    var isCharging = false;
+    var chargeFrames = 0;
+    var chargeOrigin = { x: 0, y: 0 };
+    var burstSecondaryPower = 1.0;
+
     var rafId = null;
     var isVisible = true;
     var lastFrameTime = 0;
@@ -307,14 +313,17 @@
       // Hide custom spaceship cursor and ion trail canvas
       if (craftEl) {
         craftEl.style.display = 'none';
-        craftEl.classList.remove('is-active', 'is-targeting', 'is-clicking');
+        craftEl.classList.remove('is-active', 'is-targeting', 'is-clicking', 'is-charging');
       }
+      isCharging = false;
+      chargeFrames = 0;
       if (trailCanvas) {
         trailCanvas.style.display = 'none';
         clearCraftTrail();
       }
       if (craft) {
         craft.isActive = false;
+        craft.isClicking = false;
       }
 
       // Untether any particles from tractor beam
@@ -471,7 +480,8 @@
         var pDist = Math.hypot(pDx, pDy) || 1;
 
         // Stage 1: Move towards spaceship slightly (attracted inward by energy convergence)
-        var inwardSpeed = Math.min(3.8, Math.max(1.8, pDist * 0.06));
+        var pPower = this.blastPowerScale || 1.0;
+        var inwardSpeed = Math.min(4.2, Math.max(1.8, pDist * 0.07)) * Math.min(1.4, pPower);
         this.vx = (pDx / pDist) * inwardSpeed;
         this.vy = (pDy / pDist) * inwardSpeed;
         this.x += this.vx;
@@ -484,16 +494,16 @@
         if (this.pulseTimer <= 0) {
           // Transition to Stage 2: THROWN AWAY from spaceship!
           this.pulseStage = 2;
-          this.breakCooldown = 55; // Prevent tractor re-capture while escaping
+          this.breakCooldown = 60; // Prevent tractor re-capture while escaping
           this.isTethered = false;
 
           var blastAngle = Math.atan2(this.y - this.pulseOriginY, this.x - this.pulseOriginX);
           blastAngle += (Math.random() - 0.5) * 0.35; // Organic dispersal
-          var blastSpeed = 8.5 + Math.random() * 6.5; // High explosive exit speed!
+          var blastSpeed = (8.5 + Math.random() * 6.5) * Math.min(2.2, pPower); // Scaled exit speed!
           this.vx = Math.cos(blastAngle) * blastSpeed;
           this.vy = Math.sin(blastAngle) * blastSpeed;
 
-          spawnSparks(this.x, this.y, 4, this.theme, 1.8);
+          spawnSparks(this.x, this.y, Math.floor(4 * Math.min(pPower, 2.0)), this.theme, 1.8 * Math.min(pPower, 1.5));
         }
 
         // Boundary rebound
@@ -526,6 +536,52 @@
         this.pulse += this.pulseSpeed;
         return;
       }
+
+      // --- HOLD-TO-CHARGE ATTRACTION MECHANIC ---
+      if (isCharging && shipActive) {
+        var cdx = shipX - this.x;
+        var cdy = shipY - this.y;
+        var cDist = Math.hypot(cdx, cdy) || 1;
+        var currentAttractRadius = Math.min(Math.hypot(width, height) * 0.95, (cursorRadius || 140) + chargeFrames * 4.8);
+
+        if (cDist < currentAttractRadius) {
+          this.isTethered = false;
+          var closeness = 1 - (cDist / currentAttractRadius);
+          // Smoother, gentler magnetic drift inward while charging
+          var pullAccel = 0.55 + closeness * 0.95 + Math.min(chargeFrames / 90, 0.6) * 0.4;
+
+          if (cDist > 32) {
+            this.vx += (cdx / cDist) * pullAccel * 0.10;
+            this.vy += (cdy / cDist) * pullAccel * 0.10;
+            this.vx *= 0.91;
+            this.vy *= 0.91;
+          } else {
+            // High-energy orbital buffer around spacecraft hull
+            var orbAngle = Math.atan2(this.y - shipY, this.x - shipX) + 0.10;
+            var targetOrbitDist = 24 + (this.baseRadius * 3.5);
+            var otx = shipX + Math.cos(orbAngle) * targetOrbitDist;
+            var oty = shipY + Math.sin(orbAngle) * targetOrbitDist;
+            this.vx = (otx - this.x) * 0.14 + (Math.random() - 0.5) * 0.5;
+            this.vy = (oty - this.y) * 0.14 + (Math.random() - 0.5) * 0.5;
+          }
+
+          this.x += this.vx;
+          this.y += this.vy;
+
+          // Boundary rebound
+          if (this.x < 12) { this.x = 12; this.vx = Math.abs(this.vx); }
+          else if (this.x > width - 12) { this.x = width - 12; this.vx = -Math.abs(this.vx); }
+          if (this.y < 12) { this.y = 12; this.vy = Math.abs(this.vy); }
+          else if (this.y > height - 12) { this.y = height - 12; this.vy = -Math.abs(this.vy); }
+
+          this.pulse += this.pulseSpeed;
+          this.isChargingAttracted = true;
+          this.attractDist = cDist;
+          this.attractCloseness = closeness;
+          return;
+        }
+      }
+      this.isChargingAttracted = false;
 
       if (shipActive) {
         var dx = shipX - this.x;
@@ -736,13 +792,14 @@
     }
 
     // --- SHOCKWAVE BURST ---
-    function Shockwave(x, y, theme) {
+    function Shockwave(x, y, theme, scale) {
       this.x = x;
       this.y = y;
       this.theme = theme;
+      this.scale = scale || 1.0;
       this.radius = 4;
-      this.maxRadius = 150;
-      this.speed = 8.5;
+      this.maxRadius = 150 * Math.min(this.scale, 2.2);
+      this.speed = 8.5 * Math.min(1.5, 0.85 + this.scale * 0.15);
       this.alpha = 1;
     }
 
@@ -757,7 +814,7 @@
       ctx.beginPath();
       ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
       ctx.strokeStyle = this.theme.plasma + (this.alpha * (isLight ? 0.65 : 0.55)) + ')';
-      ctx.lineWidth = Math.max(1, 3.8 * this.alpha);
+      ctx.lineWidth = Math.max(1, 3.8 * this.scale * this.alpha);
       ctx.stroke();
     };
 
@@ -906,20 +963,24 @@
     }
 
     var burstSecondaryShockwaveTimer = 0;
+    var burstSecondaryPower = 1.0;
     var burstOrigin = { x: 0, y: 0 };
     var burstTheme = null;
 
-    function triggerElectricBurst(x, y) {
+    function triggerChargedBurst(x, y, powerScale, burstRadius) {
       burstTheme = Math.random() < 0.5 ? themes.amber : themes.cyan;
-      shockwaves.push(new Shockwave(x, y, burstTheme));
-      spawnSparks(x, y, 16, burstTheme, 2.0);
-      flashOpacity = 0.12;
+      powerScale = powerScale || 1.0;
+      burstRadius = burstRadius || 320;
+
+      shockwaves.push(new Shockwave(x, y, burstTheme, powerScale));
+      spawnSparks(x, y, Math.floor(16 * powerScale), burstTheme, 2.0 * Math.min(powerScale, 1.5));
+      flashOpacity = Math.min(0.24, 0.10 * powerScale);
 
       burstOrigin.x = x;
       burstOrigin.y = y;
+      burstSecondaryPower = powerScale;
       burstSecondaryShockwaveTimer = 8; // Secondary detonation shockwave when particles are thrown away
 
-      var burstRadius = 320;
       var target = (craft && craft.isActive) ? craft : { x: x, y: y };
 
       for (var i = 0; i < nodes.length; i++) {
@@ -930,7 +991,7 @@
 
         if (dist < burstRadius) {
           // 1. Pass lightning from nearby particle TO the spacecraft
-          activeArcs.push(new DischargeArc(node, target, node.theme, 8 + Math.floor(Math.random() * 4), 2.0, true));
+          activeArcs.push(new DischargeArc(node, target, node.theme, 8 + Math.floor(Math.random() * 4), 1.6 * powerScale, true));
 
           // 2. Two-stage kinetic impulse: first move towards spaceship slightly, then get thrown away!
           node.isTethered = false;
@@ -938,8 +999,13 @@
           node.pulseTimer = 7 + Math.floor(Math.random() * 3); // 7-9 frames (~120-150ms inward)
           node.pulseOriginX = x;
           node.pulseOriginY = y;
+          node.blastPowerScale = powerScale;
         }
       }
+    }
+
+    function triggerElectricBurst(x, y) {
+      triggerChargedBurst(x, y, 1.0, 320);
     }
 
     // --- SPACECRAFT UPDATE & RENDER ---
@@ -1080,9 +1146,10 @@
         burstSecondaryShockwaveTimer--;
         if (burstSecondaryShockwaveTimer === 0) {
           var repTheme = burstTheme || themes.cyan;
-          shockwaves.push(new Shockwave(burstOrigin.x, burstOrigin.y, repTheme));
-          spawnSparks(burstOrigin.x, burstOrigin.y, 22, repTheme, 2.4);
-          flashOpacity = 0.08;
+          var repScale = burstSecondaryPower || 1.0;
+          shockwaves.push(new Shockwave(burstOrigin.x, burstOrigin.y, repTheme, repScale));
+          spawnSparks(burstOrigin.x, burstOrigin.y, Math.floor(22 * repScale), repTheme, 2.4 * Math.min(repScale, 1.5));
+          flashOpacity = Math.min(0.20, 0.08 * repScale);
         }
       }
 
@@ -1242,39 +1309,122 @@
         }
       }
 
-      // Proximity lightning to spacecraft (disabled in low-perf)
-      if (!isLowPerf && mouse.isHovering) {
-        var closeNodes = [];
-        for (var c = 0; c < len; c++) {
-          var nd = nodes[c];
-          var cdx = nd.x - mouse.x;
-          var cdy = nd.y - mouse.y;
-          var cdistSq = cdx * cdx + cdy * cdy;
-          if (cdistSq < cursorRadiusSq) {
-            closeNodes.push({ node: nd, distSq: cdistSq, dist: Math.sqrt(cdistSq) });
+      // Proximity lightning to spacecraft or Hold-to-Charge electric arching (disabled in low-perf)
+      if (!isLowPerf && (mouse.isHovering || (craft && craft.isActive))) {
+        var shipX = (craft && craft.isActive) ? craft.x : mouse.x;
+        var shipY = (craft && craft.isActive) ? craft.y : mouse.y;
+
+        if (isCharging) {
+          // Increment hold charge duration frames
+          chargeFrames++;
+
+          var currentAttractRadius = Math.min(Math.hypot(width, height) * 0.95, (cursorRadius || 140) + chargeFrames * 4.8);
+
+          // Draw expanding faint dashed charge boundary perimeter
+          ctx.beginPath();
+          ctx.arc(shipX, shipY, currentAttractRadius, 0, Math.PI * 2);
+          var perimeterAlpha = isLight ? 0.16 : 0.09;
+          ctx.strokeStyle = themes.cyan.glow + (perimeterAlpha * (0.8 + Math.sin(chargeFrames * 0.25) * 0.2)) + ')';
+          ctx.lineWidth = 1.2;
+          ctx.setLineDash([6, 8]);
+          ctx.stroke();
+          ctx.setLineDash([]);
+
+          // Charge core glow around spaceship
+          var corePulse = Math.sin(chargeFrames * 0.3) * 2;
+          var auraR = 6 + Math.min(chargeFrames * 0.18, 16) + corePulse;
+          ctx.beginPath();
+          ctx.arc(shipX, shipY, auraR, 0, Math.PI * 2);
+          ctx.fillStyle = themes.cyan.plasma + (isLight ? '0.22)' : '0.14)');
+          ctx.fill();
+
+          ctx.beginPath();
+          ctx.arc(shipX, shipY, Math.max(2, auraR * 0.45), 0, Math.PI * 2);
+          ctx.fillStyle = isLight ? (themes.amber.plasma + '0.4)') : 'rgba(255, 255, 255, 0.45)';
+          ctx.fill();
+
+          // Gather all nodes being attracted by the expanding charge field
+          var attractedNodes = [];
+          for (var c = 0; c < len; c++) {
+            var nd = nodes[c];
+            var cdx = nd.x - shipX;
+            var cdy = nd.y - shipY;
+            var cdist = Math.hypot(cdx, cdy);
+            if (cdist < currentAttractRadius) {
+              var closeness = 1 - (cdist / currentAttractRadius);
+              attractedNodes.push({ node: nd, dist: cdist, closeness: closeness });
+            }
           }
+
+          // Sort closest nodes first
+          attractedNodes.sort(function(a, b) { return a.dist - b.dist; });
+
+          // Render electric arcs: initially minimal for distant nodes, escalating in strength/width as they get closer
+          var maxFullArcs = Math.min(attractedNodes.length, 8);
+          for (var k = 0; k < attractedNodes.length; k++) {
+            var an = attractedNodes[k];
+            var closeness = an.closeness; // 0 at perimeter, 1 at ship
+            var dist = an.dist;
+
+            // Minimal arching initially / when far away, increasing substantially as closeness increases
+            var arcAlpha = Math.min(1.0, 0.16 + Math.pow(closeness, 1.3) * 0.76 + Math.min(chargeFrames / 60, 0.2));
+            var coreWidth = 0.75 + Math.pow(closeness, 1.6) * 2.6;
+
+            if (k < maxFullArcs) {
+              var disp = Math.min(32, Math.max(8, dist * 0.20));
+              var iterations = dist > 200 ? 3 : 2;
+              var allowFork = (closeness > 0.55 && Math.random() < 0.4);
+              var arc = generateLightning(an.node.x, an.node.y, shipX, shipY, disp, iterations, allowFork);
+              renderArc(arc, an.node.theme, arcAlpha, coreWidth);
+
+              // Sparks on close approach
+              if (dist < 110 && Math.random() < 0.30) {
+                spawnSparks((an.node.x + shipX) * 0.5, (an.node.y + shipY) * 0.5, 1, an.node.theme, 0.85);
+              }
+            } else {
+              // Smooth live filaments for more distant attracted particles
+              drawLiveFilament(an.node.x, an.node.y, shipX, shipY, an.node.theme, closeness * 0.7);
+            }
+          }
+
+          // Spacecraft emitter micro-sparks while charging
+          if (Math.random() < 0.25) {
+            spawnSparks(shipX, shipY, 1, Math.random() < 0.5 ? themes.amber : themes.cyan, 1.2);
+          }
+        } else {
+          // Standard proximity lightning (when not charging)
+          var closeNodes = [];
+          for (var c = 0; c < len; c++) {
+            var nd = nodes[c];
+            var cdx = nd.x - shipX;
+            var cdy = nd.y - shipY;
+            var cdistSq = cdx * cdx + cdy * cdy;
+            if (cdistSq < cursorRadiusSq) {
+              closeNodes.push({ node: nd, distSq: cdistSq, dist: Math.sqrt(cdistSq) });
+            }
+          }
+
+          closeNodes.sort(function(o1, o2) { return o1.distSq - o2.distSq; });
+          var connectLimit = closeNodes.length > 0 ? (closeNodes[0].dist < 75 && closeNodes.length > 1 ? 2 : 1) : 0;
+          for (var k = 0; k < connectLimit; k++) {
+            var cn = closeNodes[k];
+            var cAlpha = 1 - (cn.dist / cursorRadius);
+            var disp = Math.min(16, Math.max(6, cn.dist * 0.15));
+            var cursorArc = generateLightning(cn.node.x, cn.node.y, shipX, shipY, disp, 3, false);
+            renderArc(cursorArc, cn.node.theme, cAlpha * 0.48, 0.9);
+            if (Math.random() < 0.05) spawnSparks(shipX, shipY, 1, cn.node.theme, 0.6);
+          }
+
+          ctx.beginPath();
+          ctx.arc(shipX, shipY, 1.6, 0, Math.PI * 2);
+          ctx.fillStyle = isLight ? themes.cyan.hex : '#ffffff';
+          ctx.fill();
+
+          ctx.beginPath();
+          ctx.arc(shipX, shipY, 4.5, 0, Math.PI * 2);
+          ctx.fillStyle = themes.amber.glow + (isLight ? '0.35)' : '0.2)');
+          ctx.fill();
         }
-
-        closeNodes.sort(function(o1, o2) { return o1.distSq - o2.distSq; });
-        var connectLimit = closeNodes.length > 0 ? (closeNodes[0].dist < 75 && closeNodes.length > 1 ? 2 : 1) : 0;
-        for (var k = 0; k < connectLimit; k++) {
-          var cn = closeNodes[k];
-          var cAlpha = 1 - (cn.dist / cursorRadius);
-          var disp = Math.min(16, Math.max(6, cn.dist * 0.15));
-          var cursorArc = generateLightning(cn.node.x, cn.node.y, mouse.x, mouse.y, disp, 3, false);
-          renderArc(cursorArc, cn.node.theme, cAlpha * 0.48, 0.9);
-          if (Math.random() < 0.05) spawnSparks(mouse.x, mouse.y, 1, cn.node.theme, 0.6);
-        }
-
-        ctx.beginPath();
-        ctx.arc(mouse.x, mouse.y, 1.6, 0, Math.PI * 2);
-        ctx.fillStyle = isLight ? themes.cyan.hex : '#ffffff';
-        ctx.fill();
-
-        ctx.beginPath();
-        ctx.arc(mouse.x, mouse.y, 4.5, 0, Math.PI * 2);
-        ctx.fillStyle = themes.amber.glow + (isLight ? '0.35)' : '0.2)');
-        ctx.fill();
       }
 
       for (var da = activeArcs.length - 1; da >= 0; da--) {
@@ -1371,23 +1521,31 @@
       else craftEl.classList.remove('is-targeting');
     }, { passive: true });
 
-    var lastBurstTime = 0;
-    function executeClickBurst(clientX, clientY) {
+    // --- HOLD-TO-CHARGE & RELEASE INTERACTION ---
+    var lastChargeStartTime = 0;
+
+    function startCharge(clientX, clientY) {
       if (isLowPerf) return;
       var now = Date.now();
-      if (now - lastBurstTime < 80) return;
-      lastBurstTime = now;
+      if (now - lastChargeStartTime < 50) return;
+      if (isCharging) return;
+      lastChargeStartTime = now;
 
+      registerUserActivity();
       handlePointerMove(clientX, clientY);
-      triggerElectricBurst(clientX, clientY);
+
+      isCharging = true;
+      chargeFrames = 0;
+      chargeOrigin.x = clientX;
+      chargeOrigin.y = clientY;
 
       if (craftEl) {
         craft.isClicking = true;
-        craftEl.classList.add('is-clicking');
+        craftEl.classList.add('is-clicking', 'is-charging');
 
         var dirX = Math.sin(craft.angle);
         var dirY = -Math.cos(craft.angle);
-        for (var b = 0; b < 3; b++) {
+        for (var b = 0; b < 2; b++) {
           if (trailParticles.length < maxTrailParticles) {
             trailParticles.push(new TrailParticle(
               craft.x - dirX * 9,
@@ -1399,19 +1557,47 @@
             ));
           }
         }
-        spawnSparks(clientX, clientY, 4, themes.amber, 1.4);
+        spawnSparks(clientX, clientY, 4, themes.amber, 1.2);
       }
     }
 
-    window.addEventListener('pointerdown', function(e) {
-      executeClickBurst(e.clientX, e.clientY);
-    }, { passive: true });
+    function releaseCharge(clientX, clientY) {
+      if (!isCharging) return;
+      registerUserActivity();
 
-    window.addEventListener('pointerup', function() {
+      var shipX = (craft && craft.isActive) ? craft.x : ((typeof clientX === 'number' && clientX > -500) ? clientX : mouse.x);
+      var shipY = (craft && craft.isActive) ? craft.y : ((typeof clientY === 'number' && clientY > -500) ? clientY : mouse.y);
+      var held = chargeFrames;
+
+      isCharging = false;
+      chargeFrames = 0;
+
       if (craftEl) {
         craft.isClicking = false;
-        craftEl.classList.remove('is-clicking');
+        craftEl.classList.remove('is-clicking', 'is-charging');
       }
+
+      var powerScale = Math.min(2.6, 1.0 + (held / 40));
+      var blastRadius = Math.max(300, Math.min(Math.hypot(width, height), 260 + held * 4.8));
+
+      triggerChargedBurst(shipX, shipY, powerScale, blastRadius);
+    }
+
+    function executeClickBurst(clientX, clientY) {
+      startCharge(clientX, clientY);
+      releaseCharge(clientX, clientY);
+    }
+
+    window.addEventListener('pointerdown', function(e) {
+      startCharge(e.clientX, e.clientY);
+    }, { passive: true });
+
+    window.addEventListener('pointerup', function(e) {
+      releaseCharge(e.clientX, e.clientY);
+    }, { passive: true });
+
+    window.addEventListener('pointercancel', function(e) {
+      releaseCharge(e.clientX, e.clientY);
     }, { passive: true });
 
     window.addEventListener('keydown', function() {
@@ -1420,26 +1606,36 @@
 
     window.addEventListener('mousedown', function(e) {
       registerUserActivity();
-      executeClickBurst(e.clientX, e.clientY);
+      startCharge(e.clientX, e.clientY);
+    }, { passive: true });
+
+    window.addEventListener('mouseup', function(e) {
+      releaseCharge(e.clientX, e.clientY);
     }, { passive: true });
 
     document.addEventListener('mouseleave', function() {
+      if (isCharging) {
+        releaseCharge(mouse.x, mouse.y);
+      }
       if (!isAutoCruising) {
         mouse.isHovering = false;
         if (craftEl) {
           craft.isActive = false;
-          craftEl.classList.remove('is-active', 'is-targeting', 'is-clicking');
+          craftEl.classList.remove('is-active', 'is-targeting', 'is-clicking', 'is-charging');
         }
         clearCraftTrail();
       }
     });
 
     window.addEventListener('blur', function() {
+      if (isCharging) {
+        releaseCharge(mouse.x, mouse.y);
+      }
       if (!isAutoCruising) {
         mouse.isHovering = false;
         if (craftEl) {
           craft.isActive = false;
-          craftEl.classList.remove('is-active', 'is-targeting', 'is-clicking');
+          craftEl.classList.remove('is-active', 'is-targeting', 'is-clicking', 'is-charging');
         }
         clearCraftTrail();
       }
@@ -1558,6 +1754,12 @@
       },
       triggerAutoCruise: function() {
         lastInteractionTime = 0; // Trigger immediately on next frame
+      },
+      isCharging: function() {
+        return isCharging;
+      },
+      triggerChargedBurst: function(x, y, powerScale, burstRadius) {
+        triggerChargedBurst(x, y, powerScale, burstRadius);
       }
     };
 
@@ -1625,6 +1827,13 @@
     },
     triggerAutoCruise: function() {
       if (activeInstance) activeInstance.triggerAutoCruise();
+    },
+    isCharging: function() {
+      if (activeInstance) return activeInstance.isCharging();
+      return false;
+    },
+    triggerChargedBurst: function(x, y, powerScale, burstRadius) {
+      if (activeInstance) activeInstance.triggerChargedBurst(x, y, powerScale, burstRadius);
     }
   };
 });

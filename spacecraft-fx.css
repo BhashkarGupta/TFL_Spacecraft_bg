@@ -300,6 +300,51 @@
   fill: var(--fx-accent);
 }
 
+/* Spacecraft Charge-Up & Hold Feedback */
+.spacecraft-cursor.is-charging .sc-hull {
+  stroke: #ff9933;
+  filter: drop-shadow(0 0 8px rgba(255, 153, 51, 0.95)) drop-shadow(0 0 16px rgba(56, 189, 248, 0.75));
+}
+
+.spacecraft-cursor.is-charging .sc-wings {
+  stroke: #38bdf8;
+  filter: drop-shadow(0 0 6px rgba(56, 189, 248, 0.85));
+}
+
+.spacecraft-cursor.is-charging .sc-canopy {
+  fill: #38bdf8;
+  filter: drop-shadow(0 0 6px #38bdf8);
+}
+
+.spacecraft-cursor.is-charging .sc-emitter {
+  fill: #ffffff;
+  filter: drop-shadow(0 0 6px #ffffff) drop-shadow(0 0 10px #ff9933);
+}
+
+[data-theme="light"] .spacecraft-cursor.is-charging .sc-hull,
+.light-theme .spacecraft-cursor.is-charging .sc-hull {
+  stroke: #ea580c;
+  filter: drop-shadow(0 0 8px rgba(234, 88, 12, 0.85)) drop-shadow(0 0 14px rgba(2, 132, 199, 0.5));
+}
+
+[data-theme="light"] .spacecraft-cursor.is-charging .sc-wings,
+.light-theme .spacecraft-cursor.is-charging .sc-wings {
+  stroke: #0284c7;
+  filter: drop-shadow(0 0 6px rgba(2, 132, 199, 0.75));
+}
+
+[data-theme="light"] .spacecraft-cursor.is-charging .sc-canopy,
+.light-theme .spacecraft-cursor.is-charging .sc-canopy {
+  fill: #0284c7;
+  filter: drop-shadow(0 0 6px #0284c7);
+}
+
+[data-theme="light"] .spacecraft-cursor.is-charging .sc-emitter,
+.light-theme .spacecraft-cursor.is-charging .sc-emitter {
+  fill: #ea580c;
+  filter: drop-shadow(0 0 6px #ea580c);
+}
+
 /* Dual Engine Flames Flicker Animation */
 .sc-flame-left {
   transform-origin: 10.5px 27px;
