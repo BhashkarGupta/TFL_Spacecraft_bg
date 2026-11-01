@@ -316,6 +316,7 @@
         craftEl.classList.remove('is-active', 'is-targeting', 'is-clicking', 'is-charging');
       }
       isCharging = false;
+      stopChargeSound();
       chargeFrames = 0;
       if (trailCanvas) {
         trailCanvas.style.display = 'none';
@@ -341,6 +342,583 @@
 
     if (isMobileInit) {
       enableLowPerfMode('mobile_or_no_gpu_init');
+    }
+
+    // --- PROCEDURAL WEB AUDIO SYNTHESIZER ---
+    var audioCtx = null;
+    var masterGain = null;
+    var audioEnabled = false;
+    if (typeof options.audioEnabled !== 'undefined') {
+      audioEnabled = !!options.audioEnabled;
+    } else if (typeof localStorage !== 'undefined') {
+      audioEnabled = localStorage.getItem('spacecraft_fx_audio') === 'true';
+    }
+
+    // Shared smooth noise buffer (pink/brown noise for velvety ion plasma gas stream)
+    var sharedNoiseBuffer = null;
+    function getPlasmaNoiseBuffer(ctx) {
+      if (!sharedNoiseBuffer) {
+        var size = ctx.sampleRate * 2;
+        sharedNoiseBuffer = ctx.createBuffer(1, size, ctx.sampleRate);
+        var d = sharedNoiseBuffer.getChannelData(0);
+        var b0 = 0.0, b1 = 0.0, b2 = 0.0;
+        for (var i = 0; i < size; i++) {
+          var white = Math.random() * 2 - 1;
+          b0 = 0.96 * b0 + white * 0.055;
+          b1 = 0.90 * b1 + white * 0.075;
+          b2 = 0.75 * b2 + white * 0.153;
+          d[i] = (b0 + b1 + b2) * 1.5;
+        }
+      }
+      return sharedNoiseBuffer;
+    }
+
+    // Spacecraft Ion Drive Propulsion Nodes (No combustion harmonics!)
+    var thrusterNoiseSource = null;
+    var thrusterNoiseFilter = null;
+    var thrusterNoiseGain = null;
+
+    var thrusterSubOsc1 = null;
+    var thrusterSubOsc2 = null;
+    var thrusterSubGain = null;
+
+    var thrusterTurbineOsc = null;
+    var thrusterTurbineGain = null;
+
+    // Hold-to-Charge Nodes
+    var chargeWhineOsc = null;
+    var chargeSubOsc = null;
+    var chargeWhineGain = null;
+    var chargeSubGain = null;
+
+    var lastTargetLockSoundTime = 0;
+    var lastSlingshotSoundTime = 0;
+    var lastZapSoundTime = 0;
+
+    function getAudioContext() {
+      if (!audioCtx && typeof window !== 'undefined') {
+        var AudioCtxClass = window.AudioContext || window.webkitAudioContext;
+        if (AudioCtxClass) {
+          try {
+            audioCtx = new AudioCtxClass();
+            masterGain = audioCtx.createGain();
+            masterGain.gain.setValueAtTime(audioEnabled ? 0.35 : 0.0, audioCtx.currentTime);
+
+            var compressor = audioCtx.createDynamicsCompressor();
+            compressor.threshold.setValueAtTime(-14, audioCtx.currentTime);
+            compressor.knee.setValueAtTime(10, audioCtx.currentTime);
+            compressor.ratio.setValueAtTime(8, audioCtx.currentTime);
+            compressor.attack.setValueAtTime(0.003, audioCtx.currentTime);
+            compressor.release.setValueAtTime(0.2, audioCtx.currentTime);
+
+            masterGain.connect(compressor);
+            compressor.connect(audioCtx.destination);
+            initIonThrusters();
+          } catch(e) {}
+        }
+      }
+      if (audioCtx && audioCtx.state === 'suspended') {
+        audioCtx.resume().catch(function() {});
+      }
+      return audioCtx;
+    }
+
+    function unlockAudio() {
+      if (audioCtx && audioCtx.state === 'suspended') {
+        audioCtx.resume().catch(function() {});
+      }
+    }
+
+    // 1. Futuristic Spacecraft Ion Propulsion Drive
+    function initIonThrusters() {
+      if (!audioCtx || thrusterNoiseSource) return;
+      try {
+        var now = audioCtx.currentTime;
+
+        // A. Continuous velvety ion plasma exhaust rush
+        thrusterNoiseSource = audioCtx.createBufferSource();
+        thrusterNoiseSource.buffer = getPlasmaNoiseBuffer(audioCtx);
+        thrusterNoiseSource.loop = true;
+
+        thrusterNoiseFilter = audioCtx.createBiquadFilter();
+        thrusterNoiseFilter.type = 'bandpass';
+        thrusterNoiseFilter.frequency.setValueAtTime(750, now);
+        thrusterNoiseFilter.Q.setValueAtTime(1.4, now);
+
+        thrusterNoiseGain = audioCtx.createGain();
+        thrusterNoiseGain.gain.setValueAtTime(0.0001, now);
+
+        thrusterNoiseSource.connect(thrusterNoiseFilter);
+        thrusterNoiseFilter.connect(thrusterNoiseGain);
+        thrusterNoiseGain.connect(masterGain);
+        thrusterNoiseSource.start();
+
+        // B. Ethereal dual sub-sine reactor core (46Hz + 47.6Hz binaural cosmic pulse)
+        thrusterSubOsc1 = audioCtx.createOscillator();
+        thrusterSubOsc1.type = 'sine';
+        thrusterSubOsc1.frequency.setValueAtTime(46, now);
+
+        thrusterSubOsc2 = audioCtx.createOscillator();
+        thrusterSubOsc2.type = 'sine';
+        thrusterSubOsc2.frequency.setValueAtTime(47.6, now);
+
+        thrusterSubGain = audioCtx.createGain();
+        thrusterSubGain.gain.setValueAtTime(0.0001, now);
+
+        thrusterSubOsc1.connect(thrusterSubGain);
+        thrusterSubOsc2.connect(thrusterSubGain);
+        thrusterSubGain.connect(masterGain);
+        thrusterSubOsc1.start();
+        thrusterSubOsc2.start();
+
+        // C. Singing ion flux turbine whisper
+        thrusterTurbineOsc = audioCtx.createOscillator();
+        thrusterTurbineOsc.type = 'sine';
+        thrusterTurbineOsc.frequency.setValueAtTime(420, now);
+
+        thrusterTurbineGain = audioCtx.createGain();
+        thrusterTurbineGain.gain.setValueAtTime(0.0001, now);
+
+        thrusterTurbineOsc.connect(thrusterTurbineGain);
+        thrusterTurbineGain.connect(masterGain);
+        thrusterTurbineOsc.start();
+      } catch(e) {}
+    }
+
+    function updateThrusterSound(speed, isActive) {
+      if (!audioEnabled || !audioCtx || !thrusterNoiseGain) return;
+      try {
+        var now = audioCtx.currentTime;
+        if (!isActive || speed < 0.25) {
+          thrusterNoiseGain.gain.setTargetAtTime(0.0001, now, 0.2);
+          thrusterSubGain.gain.setTargetAtTime(0.012, now, 0.2); // Faint resting reactor idle
+          thrusterTurbineGain.gain.setTargetAtTime(0.0001, now, 0.2);
+          return;
+        }
+
+        var norm = Math.min(speed / 13, 1.4);
+
+        // Ion exhaust rush expands and glides up
+        var targetNoiseGain = 0.03 + norm * 0.15;
+        var targetFilterFreq = 700 + norm * 550; // 700Hz -> 1250Hz velvety rush
+        thrusterNoiseGain.gain.setTargetAtTime(targetNoiseGain, now, 0.08);
+        thrusterNoiseFilter.frequency.setTargetAtTime(targetFilterFreq, now, 0.08);
+
+        // Magnetic sub-reactor thrum
+        var targetSubGain = 0.025 + norm * 0.06;
+        thrusterSubGain.gain.setTargetAtTime(targetSubGain, now, 0.08);
+
+        // Singing ion flux overtone
+        var targetTurbineGain = norm > 0.35 ? (0.008 + norm * 0.02) : 0.0001;
+        var targetTurbineFreq = 420 + norm * 110;
+        thrusterTurbineGain.gain.setTargetAtTime(targetTurbineGain, now, 0.08);
+        thrusterTurbineOsc.frequency.setTargetAtTime(targetTurbineFreq, now, 0.08);
+      } catch(e) {}
+    }
+
+    // 2. High-Voltage Electricity & Electrocution Crackle
+    function playElectricZap(intensity) {
+      if (!audioEnabled) return;
+      var nowMs = Date.now();
+      if (nowMs - lastZapSoundTime < 45) return;
+      lastZapSoundTime = nowMs;
+      getAudioContext();
+      if (!audioCtx) return;
+      try {
+        var t = audioCtx.currentTime;
+        var pwr = Math.max(0.3, Math.min(2.5, intensity || 1.0));
+
+        // Sharp ionization crackle buffer
+        var zapLen = Math.floor(audioCtx.sampleRate * (0.025 + Math.random() * 0.035));
+        var zapBuf = audioCtx.createBuffer(1, zapLen, audioCtx.sampleRate);
+        var d = zapBuf.getChannelData(0);
+        for (var i = 0; i < zapLen; i++) {
+          var r = (Math.random() * 2 - 1);
+          d[i] = Math.pow(r, 5) * (Math.random() < 0.3 ? 1.0 : 0.25);
+        }
+        var zapSrc = audioCtx.createBufferSource();
+        zapSrc.buffer = zapBuf;
+
+        // Bandpass + Peaking filter for realistic Tesla coil / electric arc sizzle (2.8kHz - 6kHz)
+        var hp = audioCtx.createBiquadFilter();
+        hp.type = 'highpass';
+        hp.frequency.setValueAtTime(2400, t);
+
+        var peak = audioCtx.createBiquadFilter();
+        peak.type = 'peaking';
+        peak.frequency.setValueAtTime(4200 + Math.random() * 900, t);
+        peak.Q.setValueAtTime(3.8, t);
+        peak.gain.setValueAtTime(10.0, t);
+
+        var zapGain = audioCtx.createGain();
+        zapGain.gain.setValueAtTime(0.14 * pwr, t);
+        zapGain.gain.exponentialRampToValueAtTime(0.001, t + zapLen / audioCtx.sampleRate);
+
+        zapSrc.connect(hp);
+        hp.connect(peak);
+        peak.connect(zapGain);
+        zapGain.connect(masterGain);
+        zapSrc.start(t);
+
+        // Sub-burst for electrical impulse impact (120Hz micro-buzz)
+        var buzzOsc = audioCtx.createOscillator();
+        buzzOsc.type = 'sawtooth';
+        buzzOsc.frequency.setValueAtTime(120, t);
+
+        var buzzFilter = audioCtx.createBiquadFilter();
+        buzzFilter.type = 'bandpass';
+        buzzFilter.frequency.setValueAtTime(1200, t);
+        buzzFilter.Q.setValueAtTime(2.2, t);
+
+        var buzzGain = audioCtx.createGain();
+        buzzGain.gain.setValueAtTime(0.06 * pwr, t);
+        buzzGain.gain.exponentialRampToValueAtTime(0.001, t + 0.04);
+
+        buzzOsc.connect(buzzFilter);
+        buzzFilter.connect(buzzGain);
+        buzzGain.connect(masterGain);
+        buzzOsc.start(t);
+        buzzOsc.stop(t + 0.045);
+      } catch(e) {}
+    }
+
+    // 3. Sci-Fi Hold-to-Charge Energy Accumulation
+    function startChargeSound() {
+      if (!audioEnabled) return;
+      getAudioContext();
+      if (!audioCtx) return;
+      try {
+        stopChargeSound();
+        var now = audioCtx.currentTime;
+
+        // Rising capacitor coil whine (pure sine climbing from 380Hz to 2400Hz)
+        chargeWhineOsc = audioCtx.createOscillator();
+        chargeWhineOsc.type = 'sine';
+        chargeWhineOsc.frequency.setValueAtTime(360, now);
+        chargeWhineOsc.frequency.exponentialRampToValueAtTime(2400, now + 3.0);
+
+        chargeWhineGain = audioCtx.createGain();
+        chargeWhineGain.gain.setValueAtTime(0.001, now);
+        chargeWhineGain.gain.linearRampToValueAtTime(0.12, now + 0.25);
+        chargeWhineGain.gain.linearRampToValueAtTime(0.18, now + 2.5);
+
+        // Gravitational magnetic sub-bass swell (42Hz -> 96Hz)
+        chargeSubOsc = audioCtx.createOscillator();
+        chargeSubOsc.type = 'triangle';
+        chargeSubOsc.frequency.setValueAtTime(42, now);
+        chargeSubOsc.frequency.exponentialRampToValueAtTime(96, now + 3.0);
+
+        chargeSubGain = audioCtx.createGain();
+        chargeSubGain.gain.setValueAtTime(0.001, now);
+        chargeSubGain.gain.linearRampToValueAtTime(0.16, now + 0.3);
+
+        chargeWhineOsc.connect(chargeWhineGain);
+        chargeWhineGain.connect(masterGain);
+
+        chargeSubOsc.connect(chargeSubGain);
+        chargeSubGain.connect(masterGain);
+
+        chargeWhineOsc.start(now);
+        chargeSubOsc.start(now);
+      } catch(e) {}
+    }
+
+    function updateChargeSound(frames) {
+      if (!audioEnabled || !isCharging) return;
+      // Escalating micro-arcs as energy concentrates
+      var interval = Math.max(4, 20 - Math.floor(frames / 5));
+      if (frames % interval === 0) {
+        var intensity = Math.min(1.8, 0.5 + (frames / 35));
+        playElectricZap(intensity);
+      }
+    }
+
+    function stopChargeSound() {
+      if (!audioCtx) return;
+      try {
+        var now = audioCtx.currentTime;
+        if (chargeWhineGain) {
+          chargeWhineGain.gain.setTargetAtTime(0.0001, now, 0.03);
+        }
+        if (chargeSubGain) {
+          chargeSubGain.gain.setTargetAtTime(0.0001, now, 0.03);
+        }
+        if (chargeWhineOsc) {
+          try { chargeWhineOsc.stop(now + 0.05); } catch(e) {}
+          chargeWhineOsc = null;
+        }
+        if (chargeSubOsc) {
+          try { chargeSubOsc.stop(now + 0.05); } catch(e) {}
+          chargeSubOsc = null;
+        }
+        chargeWhineGain = null;
+        chargeSubGain = null;
+      } catch(e) {}
+    }
+
+    // 4A. Quick Click Plasma Arc Break
+    function playQuickClickSound() {
+      if (!audioEnabled) return;
+      playLightningBreakSound(0.95);
+    }
+
+    // 4. Strong Lightning Break & Plasma Detonation (Violent Electrical Snap, Tearing Sizzle & Thunder)
+    function playLightningBreakSound(powerScale) {
+      if (!audioEnabled) return;
+      getAudioContext();
+      if (!audioCtx) return;
+      stopChargeSound();
+      try {
+        var now = audioCtx.currentTime;
+        var scale = Math.max(0.9, Math.min(2.8, powerScale || 1.0));
+
+        // 1. DUAL SUPERSONIC ARC BREAK CRACKS ("CR-CRRR-AAACK!")
+        // Strike 1: Leader arc snap
+        var crack1 = audioCtx.createOscillator();
+        crack1.type = 'sawtooth';
+        crack1.frequency.setValueAtTime(3200, now);
+        crack1.frequency.exponentialRampToValueAtTime(380, now + 0.055);
+
+        var crackFilter1 = audioCtx.createBiquadFilter();
+        crackFilter1.type = 'bandpass';
+        crackFilter1.frequency.setValueAtTime(2900, now);
+        crackFilter1.Q.setValueAtTime(2.8, now);
+
+        var crackGain1 = audioCtx.createGain();
+        crackGain1.gain.setValueAtTime(0.38 * Math.min(scale, 1.5), now);
+        crackGain1.gain.exponentialRampToValueAtTime(0.001, now + 0.07);
+
+        crack1.connect(crackFilter1);
+        crackFilter1.connect(crackGain1);
+        crackGain1.connect(masterGain);
+        crack1.start(now);
+        crack1.stop(now + 0.075);
+
+        // Strike 2: Main return arc detonation snap (staggered by 16ms for authentic lightning break signature)
+        var crack2 = audioCtx.createOscillator();
+        crack2.type = 'sawtooth';
+        crack2.frequency.setValueAtTime(2400, now + 0.016);
+        crack2.frequency.exponentialRampToValueAtTime(220, now + 0.075);
+
+        var crackFilter2 = audioCtx.createBiquadFilter();
+        crackFilter2.type = 'bandpass';
+        crackFilter2.frequency.setValueAtTime(2200, now + 0.016);
+        crackFilter2.Q.setValueAtTime(2.4, now + 0.016);
+
+        var crackGain2 = audioCtx.createGain();
+        crackGain2.gain.setValueAtTime(0.001, now);
+        crackGain2.gain.setValueAtTime(0.42 * Math.min(scale, 1.5), now + 0.016);
+        crackGain2.gain.exponentialRampToValueAtTime(0.001, now + 0.095);
+
+        crack2.connect(crackFilter2);
+        crackFilter2.connect(crackGain2);
+        crackGain2.connect(masterGain);
+        crack2.start(now + 0.016);
+        crack2.stop(now + 0.10);
+
+        // 2. CHAOTIC FRACTAL ARC TEAR & RESIDUAL SIZZLE ("KZZZZZZZ-TCHHHH!")
+        var ripLen = Math.floor(audioCtx.sampleRate * Math.min(0.65, 0.40 * scale));
+        var ripBuf = audioCtx.createBuffer(1, ripLen, audioCtx.sampleRate);
+        var ripData = ripBuf.getChannelData(0);
+        for (var i = 0; i < ripLen; i++) {
+          var progress = i / ripLen;
+          var decay = Math.exp(-progress * 4.2);
+          var noise = (Math.random() * 2 - 1);
+          // Heavy non-linear power-of-3 clipping creates aggressive plasma sizzle
+          ripData[i] = Math.pow(noise, 3) * decay * (Math.random() < 0.5 ? 1.0 : 0.35);
+        }
+
+        var ripSrc = audioCtx.createBufferSource();
+        ripSrc.buffer = ripBuf;
+
+        var ripHighpass = audioCtx.createBiquadFilter();
+        ripHighpass.type = 'highpass';
+        ripHighpass.frequency.setValueAtTime(1400, now);
+
+        var ripPeak = audioCtx.createBiquadFilter();
+        ripPeak.type = 'peaking';
+        ripPeak.frequency.setValueAtTime(4400, now);
+        ripPeak.Q.setValueAtTime(3.2, now);
+        ripPeak.gain.setValueAtTime(14.0, now);
+
+        var ripGain = audioCtx.createGain();
+        ripGain.gain.setValueAtTime(0.36 * Math.min(scale, 1.5), now);
+        ripGain.gain.exponentialRampToValueAtTime(0.001, now + (ripLen / audioCtx.sampleRate));
+
+        ripSrc.connect(ripHighpass);
+        ripHighpass.connect(ripPeak);
+        ripPeak.connect(ripGain);
+        ripGain.connect(masterGain);
+        ripSrc.start(now);
+
+        // 3. ATMOSPHERIC THUNDER SHOCKWAVE (Turbulent air rumble, NO sine wave / NO drum kick!)
+        var thunderLen = Math.floor(audioCtx.sampleRate * Math.min(0.85, 0.65 * scale));
+        var thunderBuf = audioCtx.createBuffer(1, thunderLen, audioCtx.sampleRate);
+        var thunderData = thunderBuf.getChannelData(0);
+        var brown = 0.0;
+        for (var b = 0; b < thunderLen; b++) {
+          var white = Math.random() * 2 - 1;
+          brown = (brown * 0.94) + (white * 0.06);
+          var env = Math.exp(-(b / thunderLen) * 3.2);
+          thunderData[b] = brown * env * 3.4;
+        }
+
+        var thunderSrc = audioCtx.createBufferSource();
+        thunderSrc.buffer = thunderBuf;
+
+        var thunderFilter = audioCtx.createBiquadFilter();
+        thunderFilter.type = 'lowpass';
+        thunderFilter.frequency.setValueAtTime(180 * scale, now);
+        thunderFilter.frequency.exponentialRampToValueAtTime(42, now + 0.60);
+
+        var thunderGain = audioCtx.createGain();
+        thunderGain.gain.setValueAtTime(0.30 * Math.min(scale, 1.5), now);
+        thunderGain.gain.exponentialRampToValueAtTime(0.001, now + 0.68);
+
+        thunderSrc.connect(thunderFilter);
+        thunderFilter.connect(thunderGain);
+        thunderGain.connect(masterGain);
+        thunderSrc.start(now);
+
+        // 4. Secondary sharp spark snaps across the field
+        playElectricZap(1.8 * scale);
+      } catch(e) {}
+    }
+
+    // 5. Slingshot Acceleration Breakaway Snap
+    function playSlingshotSound() {
+      if (!audioEnabled) return;
+      var nowMs = Date.now();
+      if (nowMs - lastSlingshotSoundTime < 60) return;
+      lastSlingshotSoundTime = nowMs;
+      getAudioContext();
+      if (!audioCtx) return;
+      try {
+        // High-voltage snap
+        playElectricZap(1.8);
+
+        var t = audioCtx.currentTime;
+        // Kinetic slipstream whoosh
+        var whoosh = audioCtx.createOscillator();
+        whoosh.type = 'sine';
+        whoosh.frequency.setValueAtTime(750, t);
+        whoosh.frequency.exponentialRampToValueAtTime(180, t + 0.11);
+
+        var whooshGain = audioCtx.createGain();
+        whooshGain.gain.setValueAtTime(0.10, t);
+        whooshGain.gain.exponentialRampToValueAtTime(0.001, t + 0.12);
+
+        whoosh.connect(whooshGain);
+        whooshGain.connect(masterGain);
+        whoosh.start(t);
+        whoosh.stop(t + 0.13);
+      } catch(e) {}
+    }
+
+    // 6. UI Target Lock Blip
+    function playTargetLockSound() {
+      if (!audioEnabled) return;
+      var nowMs = Date.now();
+      if (nowMs - lastTargetLockSoundTime < 160) return;
+      lastTargetLockSoundTime = nowMs;
+      getAudioContext();
+      if (!audioCtx) return;
+      try {
+        var t = audioCtx.currentTime;
+        var osc = audioCtx.createOscillator();
+        var gain = audioCtx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(1040, t);
+        osc.frequency.setValueAtTime(1420, t + 0.024);
+
+        gain.gain.setValueAtTime(0.065, t);
+        gain.gain.exponentialRampToValueAtTime(0.001, t + 0.052);
+
+        osc.connect(gain);
+        gain.connect(masterGain);
+
+        osc.start(t);
+        osc.stop(t + 0.06);
+      } catch(e) {}
+    }
+
+    // 7. Auto-Cruise Initiation Chime
+    function playCruiseSound() {
+      if (!audioEnabled) return;
+      getAudioContext();
+      if (!audioCtx) return;
+      try {
+        var t = audioCtx.currentTime;
+        var osc = audioCtx.createOscillator();
+        var gain = audioCtx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(320, t);
+        osc.frequency.exponentialRampToValueAtTime(540, t + 0.32);
+
+        gain.gain.setValueAtTime(0.001, t);
+        gain.gain.linearRampToValueAtTime(0.08, t + 0.08);
+        gain.gain.exponentialRampToValueAtTime(0.001, t + 0.35);
+
+        osc.connect(gain);
+        gain.connect(masterGain);
+        osc.start(t);
+        osc.stop(t + 0.36);
+      } catch(e) {}
+    }
+
+    // 8. Toggle Feedback Chime
+    function playToggleChime(enabled) {
+      getAudioContext();
+      if (!audioCtx) return;
+      try {
+        var t = audioCtx.currentTime;
+        var osc = audioCtx.createOscillator();
+        var gain = audioCtx.createGain();
+        osc.type = 'sine';
+        if (enabled) {
+          osc.frequency.setValueAtTime(440, t);
+          osc.frequency.setValueAtTime(680, t + 0.07);
+        } else {
+          osc.frequency.setValueAtTime(680, t);
+          osc.frequency.setValueAtTime(330, t + 0.07);
+        }
+        gain.gain.setValueAtTime(0.10, t);
+        gain.gain.exponentialRampToValueAtTime(0.001, t + 0.18);
+
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start(t);
+        osc.stop(t + 0.19);
+      } catch(e) {}
+    }
+
+    function setAudioEnabled(enabled) {
+      audioEnabled = !!enabled;
+      getAudioContext();
+      if (masterGain && audioCtx) {
+        masterGain.gain.setTargetAtTime(audioEnabled ? 0.35 : 0.0, audioCtx.currentTime, 0.05);
+      }
+      if (!audioEnabled) {
+        stopChargeSound();
+      }
+      try {
+        localStorage.setItem('spacecraft_fx_audio', audioEnabled ? 'true' : 'false');
+      } catch(e) {}
+      playToggleChime(audioEnabled);
+      if (typeof window !== 'undefined' && typeof window.dispatchEvent === 'function') {
+        try {
+          window.dispatchEvent(new CustomEvent('spacecraftfx:audiochange', { detail: { enabled: audioEnabled } }));
+        } catch(e) {}
+      }
+      return audioEnabled;
+    }
+
+    function toggleAudio() {
+      return setAudioEnabled(!audioEnabled);
+    }
+
+    function isAudioEnabled() {
+      return audioEnabled;
     }
 
     // --- APPLY THEME ---
@@ -604,6 +1182,7 @@
             if (Math.random() < 0.75) {
               spawnSparks(this.x, this.y, 4, this.theme, 1.4);
             }
+            playSlingshotSound();
           } else {
             // TETHERED DRAG MODE: dragged along with the spaceship
             this.tetherTime++;
@@ -1093,6 +1672,7 @@
       }
 
       craft.speed *= 0.82;
+      updateThrusterSound(craft.speed, craft.isActive);
     }
 
     // --- MAIN RENDER LOOP ---
@@ -1180,6 +1760,7 @@
           }
           // Target an edge across the screen
           pickNewCruiseEdgeTarget();
+          playCruiseSound();
         }
 
         // Steer heading towards the target edge waypoint
@@ -1288,6 +1869,7 @@
               if (activeArcs.length < 9) {
                 activeArcs.push(new DischargeArc(n1, n2, n1.theme, 6, 1.35, true));
                 if (Math.random() < 0.5) spawnSparks((n1.x + n2.x) * 0.5, (n1.y + n2.y) * 0.5, 2, n1.theme, 0.85);
+                playElectricZap(0.45);
               }
             }
           }
@@ -1304,6 +1886,7 @@
             var disTheme = Math.random() < 0.6 ? themes.amber : themes.cyan;
             activeArcs.push(new DischargeArc(nodes[i1], nodes[i2], disTheme, 10 + Math.floor(Math.random() * 6), 1.75, true));
             spawnSparks((nodes[i1].x + nodes[i2].x) * 0.5, (nodes[i1].y + nodes[i2].y) * 0.5, 4, disTheme, 1.2);
+            playElectricZap(0.9);
             flashOpacity = 0.05;
           }
         }
@@ -1317,6 +1900,7 @@
         if (isCharging) {
           // Increment hold charge duration frames
           chargeFrames++;
+          updateChargeSound(chargeFrames);
 
           var currentAttractRadius = Math.min(Math.hypot(width, height) * 0.95, (cursorRadius || 140) + chargeFrames * 4.8);
 
@@ -1380,6 +1964,7 @@
               // Sparks on close approach
               if (dist < 110 && Math.random() < 0.30) {
                 spawnSparks((an.node.x + shipX) * 0.5, (an.node.y + shipY) * 0.5, 1, an.node.theme, 0.85);
+                playElectricZap(0.7);
               }
             } else {
               // Smooth live filaments for more distant attracted particles
@@ -1390,6 +1975,7 @@
           // Spacecraft emitter micro-sparks while charging
           if (Math.random() < 0.25) {
             spawnSparks(shipX, shipY, 1, Math.random() < 0.5 ? themes.amber : themes.cyan, 1.2);
+            playElectricZap(0.5);
           }
         } else {
           // Standard proximity lightning (when not charging)
@@ -1412,7 +1998,10 @@
             var disp = Math.min(16, Math.max(6, cn.dist * 0.15));
             var cursorArc = generateLightning(cn.node.x, cn.node.y, shipX, shipY, disp, 3, false);
             renderArc(cursorArc, cn.node.theme, cAlpha * 0.48, 0.9);
-            if (Math.random() < 0.05) spawnSparks(shipX, shipY, 1, cn.node.theme, 0.6);
+            if (Math.random() < 0.05) {
+              spawnSparks(shipX, shipY, 1, cn.node.theme, 0.6);
+              playElectricZap(0.4);
+            }
           }
 
           ctx.beginPath();
@@ -1452,6 +2041,7 @@
 
     // --- INTERACTION LISTENERS ---
     function registerUserActivity() {
+      unlockAudio();
       lastInteractionTime = Date.now();
       if (isAutoCruising) {
         isAutoCruising = false;
@@ -1517,24 +2107,36 @@
         return;
       }
       var isInteractive = target && target.closest && target.closest('a, button, input, textarea, select, [role="button"], [tabindex]:not([tabindex="-1"]), .fx-glass-card, .fx-glass-btn');
-      if (isInteractive) craftEl.classList.add('is-targeting');
-      else craftEl.classList.remove('is-targeting');
+      if (isInteractive) {
+        if (!craftEl.classList.contains('is-targeting')) {
+          playTargetLockSound();
+        }
+        craftEl.classList.add('is-targeting');
+      } else {
+        craftEl.classList.remove('is-targeting');
+      }
     }, { passive: true });
 
     // --- HOLD-TO-CHARGE & RELEASE INTERACTION ---
     var lastChargeStartTime = 0;
+    var chargeHoldStartTime = 0;
 
-    function startCharge(clientX, clientY) {
+    function startCharge(clientX, clientY, target) {
       if (isLowPerf) return;
+      if (target && target.closest && target.closest('button, a, input, select, textarea, [role="button"], .demo-header, .demo-nav-actions')) {
+        return;
+      }
       var now = Date.now();
       if (now - lastChargeStartTime < 50) return;
       if (isCharging) return;
       lastChargeStartTime = now;
+      chargeHoldStartTime = now;
 
       registerUserActivity();
       handlePointerMove(clientX, clientY);
 
       isCharging = true;
+      startChargeSound();
       chargeFrames = 0;
       chargeOrigin.x = clientX;
       chargeOrigin.y = clientY;
@@ -1565,11 +2167,12 @@
       if (!isCharging) return;
       registerUserActivity();
 
+      var holdMs = Math.max(0, Date.now() - chargeHoldStartTime);
       var shipX = (craft && craft.isActive) ? craft.x : ((typeof clientX === 'number' && clientX > -500) ? clientX : mouse.x);
       var shipY = (craft && craft.isActive) ? craft.y : ((typeof clientY === 'number' && clientY > -500) ? clientY : mouse.y);
-      var held = chargeFrames;
 
       isCharging = false;
+      stopChargeSound();
       chargeFrames = 0;
 
       if (craftEl) {
@@ -1577,9 +2180,10 @@
         craftEl.classList.remove('is-clicking', 'is-charging');
       }
 
-      var powerScale = Math.min(2.6, 1.0 + (held / 40));
-      var blastRadius = Math.max(300, Math.min(Math.hypot(width, height), 260 + held * 4.8));
-
+      // Strong lightning break arc snap & plasma detonation (never a weak tap or drum thump)
+      var powerScale = Math.min(2.8, Math.max(1.0, 1.0 + (holdMs / 320)));
+      var blastRadius = Math.max(300, Math.min(Math.hypot(width, height), 260 + (holdMs / 1000) * 340));
+      playLightningBreakSound(powerScale);
       triggerChargedBurst(shipX, shipY, powerScale, blastRadius);
     }
 
@@ -1588,29 +2192,30 @@
       releaseCharge(clientX, clientY);
     }
 
-    window.addEventListener('pointerdown', function(e) {
-      startCharge(e.clientX, e.clientY);
-    }, { passive: true });
+    if (typeof window !== 'undefined' && window.PointerEvent) {
+      window.addEventListener('pointerdown', function(e) {
+        startCharge(e.clientX, e.clientY, e.target);
+      }, { passive: true });
 
-    window.addEventListener('pointerup', function(e) {
-      releaseCharge(e.clientX, e.clientY);
-    }, { passive: true });
+      window.addEventListener('pointerup', function(e) {
+        releaseCharge(e.clientX, e.clientY);
+      }, { passive: true });
 
-    window.addEventListener('pointercancel', function(e) {
-      releaseCharge(e.clientX, e.clientY);
-    }, { passive: true });
+      window.addEventListener('pointercancel', function(e) {
+        releaseCharge(e.clientX, e.clientY);
+      }, { passive: true });
+    } else if (typeof window !== 'undefined') {
+      window.addEventListener('mousedown', function(e) {
+        startCharge(e.clientX, e.clientY, e.target);
+      }, { passive: true });
+
+      window.addEventListener('mouseup', function(e) {
+        releaseCharge(e.clientX, e.clientY);
+      }, { passive: true });
+    }
 
     window.addEventListener('keydown', function() {
       registerUserActivity();
-    }, { passive: true });
-
-    window.addEventListener('mousedown', function(e) {
-      registerUserActivity();
-      startCharge(e.clientX, e.clientY);
-    }, { passive: true });
-
-    window.addEventListener('mouseup', function(e) {
-      releaseCharge(e.clientX, e.clientY);
     }, { passive: true });
 
     document.addEventListener('mouseleave', function() {
@@ -1624,6 +2229,7 @@
           craftEl.classList.remove('is-active', 'is-targeting', 'is-clicking', 'is-charging');
         }
         clearCraftTrail();
+        updateThrusterSound(0, false);
       }
     });
 
@@ -1638,6 +2244,7 @@
           craftEl.classList.remove('is-active', 'is-targeting', 'is-clicking', 'is-charging');
         }
         clearCraftTrail();
+        updateThrusterSound(0, false);
       }
     });
 
@@ -1677,6 +2284,8 @@
       if (document.hidden) {
         isVisible = false;
         if (rafId) { cancelAnimationFrame(rafId); rafId = null; }
+        stopChargeSound();
+        updateThrusterSound(0, false);
       } else {
         isVisible = true;
         registerUserActivity();
@@ -1760,6 +2369,15 @@
       },
       triggerChargedBurst: function(x, y, powerScale, burstRadius) {
         triggerChargedBurst(x, y, powerScale, burstRadius);
+      },
+      toggleAudio: function() {
+        return toggleAudio();
+      },
+      setAudioEnabled: function(enabled) {
+        return setAudioEnabled(enabled);
+      },
+      isAudioEnabled: function() {
+        return isAudioEnabled();
       }
     };
 
@@ -1834,6 +2452,18 @@
     },
     triggerChargedBurst: function(x, y, powerScale, burstRadius) {
       if (activeInstance) activeInstance.triggerChargedBurst(x, y, powerScale, burstRadius);
+    },
+    toggleAudio: function() {
+      if (activeInstance) return activeInstance.toggleAudio();
+      return false;
+    },
+    setAudioEnabled: function(enabled) {
+      if (activeInstance) return activeInstance.setAudioEnabled(enabled);
+      return false;
+    },
+    isAudioEnabled: function() {
+      if (activeInstance) return activeInstance.isAudioEnabled();
+      return false;
     }
   };
 });

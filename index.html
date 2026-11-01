@@ -16,17 +16,20 @@
       padding: 0;
     }
 
+    html {
+      scroll-behavior: smooth;
+    }
+
     body {
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
       background-color: var(--fx-bg);
       color: var(--fx-text);
-      min-height: 250vh;
       overflow-x: hidden;
       line-height: 1.6;
       transition: background-color 0.3s ease, color 0.3s ease;
     }
 
-    /* Floating Header with Theme Switcher */
+    /* Floating Header with Auto-Hide in Full Viewport Arena */
     .demo-header {
       position: fixed;
       top: 0;
@@ -36,12 +39,16 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
-      padding: 18px 32px;
+      padding: 16px 32px;
       backdrop-filter: blur(14px);
       -webkit-backdrop-filter: blur(14px);
       border-bottom: 1px solid var(--fx-glass-border);
       background: var(--fx-glass-bg);
-      transition: background 0.3s ease, border-color 0.3s ease;
+      transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1), background 0.3s ease, border-color 0.3s ease;
+    }
+
+    .demo-header.header-hidden {
+      transform: translateY(-100%);
     }
 
     .demo-logo {
@@ -72,21 +79,46 @@
       display: flex;
       align-items: center;
       gap: 12px;
+      flex-wrap: wrap;
     }
 
     .nav-btn {
       display: inline-flex;
       align-items: center;
+      justify-content: center;
       gap: 8px;
       padding: 8px 14px;
       font-size: 13px;
       font-weight: 500;
+      line-height: 1;
+      height: 35px;
+      box-sizing: border-box;
       cursor: pointer;
+      vertical-align: middle;
+    }
+
+    .nav-btn > span {
+      display: inline-flex;
+      align-items: center;
+      line-height: 1;
+    }
+
+    .nav-icon,
+    #sound-icon,
+    #theme-icon {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 15px;
+      height: 15px;
+      line-height: 1;
+      flex-shrink: 0;
     }
 
     .nav-btn svg {
       width: 15px;
       height: 15px;
+      display: block;
       flex-shrink: 0;
     }
 
@@ -200,21 +232,15 @@
       opacity: 0.75;
     }
 
-    .demo-footer-card {
-      margin-top: 60px;
-      padding: 36px;
-      text-align: center;
-    }
 
-    .demo-footer-card h2 {
-      font-size: 24px;
-      margin-bottom: 12px;
-    }
 
-    .demo-footer-card p {
-      color: var(--fx-text-muted);
-      max-width: 600px;
-      margin: 0 auto 24px;
+    /* Full Viewport Free Flight Arena */
+    .arena-section {
+      position: relative;
+      width: 100vw;
+      height: 100vh;
+      min-height: 100vh;
+      pointer-events: none;
     }
   </style>
 </head>
@@ -234,24 +260,41 @@
     <div class="demo-nav-actions">
       <!-- Instant Auto-Cruise Test Button -->
       <button id="cruise-test-btn" class="fx-glass-btn fx-glass-btn-secondary nav-btn" title="Instantly trigger Idle Auto-Cruise without waiting 15 seconds">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <circle cx="12" cy="12" r="10"></circle>
-          <polygon points="10 8 16 12 10 16 10 8"></polygon>
-        </svg>
+        <span class="nav-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"></circle>
+            <polygon points="10 8 16 12 10 16 10 8"></polygon>
+          </svg>
+        </span>
         <span>Cruise Now</span>
       </button>
 
       <!-- Mode activation toggle -->
       <button id="lowperf-toggle-btn" class="fx-glass-btn fx-glass-btn-secondary nav-btn" title="Toggle Low-Performance Mode (< 30 FPS mode)">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
-        </svg>
+        <span class="nav-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+          </svg>
+        </span>
         <span id="lowperf-label">Performance Mode</span>
+      </button>
+
+      <!-- Sound FX Toggle Button -->
+      <button id="sound-toggle-btn" class="fx-glass-btn fx-glass-btn-secondary nav-btn" aria-label="Toggle sound effects" title="Toggle Synthesized Sci-Fi Sound FX">
+        <span id="sound-icon" class="nav-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+            <line x1="23" y1="9" x2="17" y2="15"></line>
+            <line x1="17" y1="9" x2="23" y2="15"></line>
+          </svg>
+        </span>
+        <span id="sound-label">Sound FX</span>
+        <span class="nav-sound-dot" aria-hidden="true"></span>
       </button>
 
       <!-- Theme Switcher -->
       <button id="theme-toggle-btn" class="fx-glass-btn fx-glass-btn-secondary nav-btn" aria-label="Toggle light or dark theme" title="Toggle Light / Dark Theme">
-        <span id="theme-icon">
+        <span id="theme-icon" class="nav-icon">
           <!-- Default Moon Icon for Dark Theme -->
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
@@ -268,6 +311,24 @@
     <p class="lead">
       An interactive background and spacecraft flight cursor engine featuring high-voltage electric plasma networks, dual-mode tractor beam dynamics, hold-to-charge particle attraction, kinetic release shockwaves, cosmic nebula clouds, real-time banking orientation, dual ion exhaust trails, and adaptive performance fallback across both light and dark themes.
     </p>
+
+    <!-- Quick Navigation to Arena -->
+    <div class="btn-group">
+      <button class="fx-glass-btn fx-glass-btn-primary nav-btn" onclick="document.getElementById('arena').scrollIntoView({ behavior: 'smooth' });">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="12" y1="5" x2="12" y2="19"></line>
+          <polyline points="19 12 12 19 5 12"></polyline>
+        </svg>
+        <span>Arena &darr;</span>
+      </button>
+      <button class="fx-glass-btn fx-glass-btn-secondary nav-btn" onclick="if (window.SpacecraftFX && window.SpacecraftFX.triggerAutoCruise) window.SpacecraftFX.triggerAutoCruise();">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="10"></circle>
+          <polygon points="10 8 16 12 10 16 10 8"></polygon>
+        </svg>
+        <span>Launch Auto-Cruise</span>
+      </button>
+    </div>
 
     <!-- Features Cards Grid (7 Interactive Features) -->
     <div class="cards-grid">
@@ -319,20 +380,22 @@
           <p>Press and hold the mouse button to charge energy: nearby particles are gently drawn inward at a steady, majestic pace as the attraction field progressively expands across the screen to pull in distant particles. Attracted particles form live electric arcs with the spacecraft that intensify with vibrant fractal lightning and energetic sparks as they draw close. Releasing pulls particles slightly closer before violently repelling them away with radial shockwaves and scaled kinetic momentum.</p>
         </div>
       </div>
+
+      <div class="fx-glass-card card card-span-full">
+        <div class="card-inner">
+          <h3>8. Procedural Web Audio Sound FX</h3>
+          <p>Zero external audio dependencies or network lag. Uses the browser's native Web Audio API to procedurally synthesize dynamic ion thruster velocity hums, hold-to-charge rising energy sweeps, explosive sub-bass kinetic shockwave thumps, high-velocity slingshot detachment snaps, and UI target-lock blips. Includes one-click audio muting and automatic localStorage persistence.</p>
+        </div>
+      </div>
     </div>
 
-    <div class="fx-glass-card demo-footer-card">
-      <h2>Drop-in Standalone Engine</h2>
-      <p>Simply import <code>spacecraft-fx.css</code> and <code>spacecraft-fx.js</code> into any web project. Supports theme toggle via <code>data-theme="light"</code> or <code>SpacecraftFX.toggleTheme()</code>.</p>
-      <button class="fx-glass-btn fx-glass-btn-primary" onclick="window.scrollTo({top: 0, behavior: 'smooth'});">
-        <span>Return to Top</span>
-      </button>
-    </div>
-
-    <div class="scroll-hint">
-      Scroll down to test acceleration dynamics &bull; &bull; &bull;
+    <div class="scroll-hint" onclick="document.getElementById('arena').scrollIntoView({ behavior: 'smooth' });" style="cursor: pointer;" title="Click to scroll into Arena">
+      Scroll down to enter Arena &darr;
     </div>
   </main>
+
+  <!-- Arena (100vh unobstructed space to play) -->
+  <section class="arena-section" id="arena"></section>
 
   <!-- Spacecraft FX Script (automatically mounts canvases, cursor, and monitors themes) -->
   <script src="spacecraft-fx.js"></script>
@@ -402,6 +465,73 @@
         }
       });
     }
+
+    // Sound FX toggle interaction
+    var soundBtn = document.getElementById('sound-toggle-btn');
+    var soundIcon = document.getElementById('sound-icon');
+    var soundLabel = document.getElementById('sound-label');
+
+    var soundOnSvg = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path></svg>';
+    var soundOffSvg = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><line x1="23" y1="9" x2="17" y2="15"></line><line x1="17" y1="9" x2="23" y2="15"></line></svg>';
+
+    function syncSoundUI(enabled) {
+      if (enabled) {
+        soundIcon.innerHTML = soundOnSvg;
+        soundBtn.classList.add('sound-active');
+        soundBtn.setAttribute('title', 'Sound FX: Active (Click to mute)');
+      } else {
+        soundIcon.innerHTML = soundOffSvg;
+        soundBtn.classList.remove('sound-active');
+        soundBtn.setAttribute('title', 'Sound FX: Muted (Click to enable)');
+      }
+    }
+
+    if (soundBtn) {
+      soundBtn.addEventListener('click', function() {
+        if (window.SpacecraftFX && window.SpacecraftFX.toggleAudio) {
+          var newState = window.SpacecraftFX.toggleAudio();
+          syncSoundUI(newState);
+        }
+      });
+      // Initial state sync
+      var initialAudio = (window.SpacecraftFX && window.SpacecraftFX.isAudioEnabled) ?
+        window.SpacecraftFX.isAudioEnabled() :
+        (localStorage.getItem('spacecraft_fx_audio') === 'true');
+      syncSoundUI(initialAudio);
+    }
+
+    window.addEventListener('spacecraftfx:audiochange', function(e) {
+      if (e.detail && typeof e.detail.enabled === 'boolean') {
+        syncSoundUI(e.detail.enabled);
+      }
+    });
+
+    // Auto-hide header when scrolled down into Arena
+    var headerEl = document.querySelector('.demo-header');
+    var arenaEl = document.getElementById('arena');
+    var lastScrollY = window.scrollY;
+
+    function handleHeaderScroll() {
+      var currentScrollY = window.scrollY;
+      var arenaRect = arenaEl ? arenaEl.getBoundingClientRect() : null;
+
+      var isInArena = arenaRect && arenaRect.top <= 120;
+
+      if (isInArena && currentScrollY > lastScrollY && currentScrollY > 250) {
+        headerEl.classList.add('header-hidden');
+      } else if (currentScrollY < lastScrollY || currentScrollY < 180) {
+        headerEl.classList.remove('header-hidden');
+      }
+      lastScrollY = currentScrollY;
+    }
+
+    window.addEventListener('scroll', handleHeaderScroll, { passive: true });
+
+    window.addEventListener('mousemove', function(e) {
+      if (e.clientY < 28) {
+        headerEl.classList.remove('header-hidden');
+      }
+    }, { passive: true });
   </script>
 </body>
 </html>

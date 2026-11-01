@@ -12,6 +12,7 @@ A lightweight, zero-dependency visual effect engine featuring an interactive ele
 - **Spacecraft Flight Cursor**: 1:1 hardware mouse tracking with 360-degree directional banking, dual flame exhausts, and glowing ion trails.
 - **Scroll Acceleration**: Dynamic vertical dive and climb offset coupled to mouse wheel or page scrolling.
 - **Idle Autopilot Cruise**: If no user interaction occurs for 15 seconds (customizable), the spacecraft automatically embarks on a smooth celestial cruise across the page, waking upon mouse or keyboard interaction.
+- **Procedural Web Audio Sound FX**: Native Web Audio synthesizer with zero external audio assets. Dynamically generates ion thruster hums mapped to craft velocity, hold-to-charge sweeps, sub-bass kinetic shockwaves, slingshot breakaway snaps, and UI target-lock blips. Includes one-click audio muting and persistence.
 - **Adaptive Performance Mode**: Automatic FPS monitor that switches to zero-blur, lightweight translucent rendering if sustained frame rate drops below 30 FPS.
 - **Light and Dark Theme Support**: Adapts automatically via `data-theme="light"` or `data-theme="dark"`.
 - **Responsive and Accessible**: Automatically switches to native cursors and disables heavy GPU filters on mobile and touch devices, and respects `prefers-reduced-motion`.
@@ -65,6 +66,23 @@ SpacecraftFX.enableLowPerfMode();
 
 // Check if low-performance mode is currently active
 console.log(SpacecraftFX.isLowPerf());
+```
+
+---
+
+## Sound FX Controls
+
+Sound effects can be toggled via the UI button or controlled programmatically:
+
+```javascript
+// Toggle sound effects on/off
+SpacecraftFX.toggleAudio();
+
+// Set explicitly (true | false)
+SpacecraftFX.setAudioEnabled(true);
+
+// Check if sound is active
+console.log(SpacecraftFX.isAudioEnabled());
 ```
 
 ---
